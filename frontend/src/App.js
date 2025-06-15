@@ -2,6 +2,14 @@ import React, { useState } from "react";
 import DatabaseSelector from "./components/DatabaseSelector";
 import CredentialsModal from "./components/CredentialsModal";
 import SchemaView from "./components/SchemaView";
+import CustomQuery from "./components/CustomQuery";
+
+var username = "root"
+var password = "Kush@789#"
+var host = "dev.wikibedtimestories.com"
+var database = "WBS"
+var driver = "mysql"
+var port = 31347
 
 // Main App
 function App() {
@@ -12,6 +20,7 @@ function App() {
 
   const [credentials, setCredentials] = useState(null);
   const [tableData, setTableData] = useState([]);
+  const [queryData, setQueryData] = useState(null);
 
   // Handle database select
   const handleSelect = (db) => {
@@ -24,13 +33,21 @@ function App() {
     setIsOpen(false);
     setCredentials(creds);
     try {
+      // const payload = {
+      //   username: creds.username,
+      //   password: creds.password,
+      //   host: creds.host,
+      //   port: Number(creds.port),
+      //   database: creds.database,
+      //   driver: selectedDb
+      // };
       const payload = {
-        username: creds.username,
-        password: creds.password,
-        host: creds.host,
-        port: Number(creds.port),
-        database: creds.database,
-        driver: selectedDb
+        username: username,
+        password: password,
+        host: host,
+        port: port,
+        database: database,
+        driver: driver
       };
       const res = await fetch("http://localhost:8080/db-schema", {
         method: 'POST',
@@ -66,11 +83,11 @@ function App() {
 
     try {
       const payload = {
-        username: credentials.username,
-        password: credentials.password,
-        host: credentials.host,
-        port: Number(credentials.port),
-        database: credentials.database,
+        username: username,
+        password: password,
+        host: host,
+        port: port,
+        database: database,
         driver: selectedDb,
         tables: selectedTables,
         page,
@@ -87,6 +104,34 @@ function App() {
         setTableData(data);
       } else {
         console.error('API Error while loading table data');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  // Handle custom query execution
+  const handleCustomQuery = async (query) => {
+    try {
+      const payload = {
+        username: username,
+        password: password,
+        host: host,
+        port: port,
+        database: database,
+        driver: driver,
+        query: query,
+      };
+      const res = await fetch("http://localhost:8080/custom-query", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setQueryData(data);
+      } else {
+        console.error('API Error while executing custom query');
       }
     } catch (err) {
       console.error(err);
@@ -142,7 +187,11 @@ function App() {
           ))}
         </div>
       )}
-
+      <div style={{ padding: '20px' }}>
+        {/*existing components*/}
+        <CustomQuery onExecute={handleCustomQuery} />
+        <TableView tableData={queryData} />
+      </div>
 
     </div>
   )

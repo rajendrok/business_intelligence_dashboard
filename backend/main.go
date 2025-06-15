@@ -20,6 +20,7 @@ type DBPayload struct {
 	Tables   []string `json:"tables"`
 	Limit    int      `json:"limit"`
 	Offset   int      `json:"offset"`
+	Query    string   `json:"query"`
 }
 
 func main() {
@@ -27,6 +28,7 @@ func main() {
 	r.Use(CORSMiddleware())
 	r.POST("/db-schema", handleDBSchema)
 	r.POST("/table-data", handleFetchTableData)
+	r.POST("/custom-query", handleCustomQuery)
 
 	r.Run(":8080")
 }
@@ -269,4 +271,73 @@ func getColumnNames(db *sql.DB, table, driver string) ([]string, error) {
 
 func printLog(description string, data interface{}) {
 	fmt.Printf("[LOG] %s: %+v\n", description, data)
+}
+
+func handleCustomQuery(c *gin.Context) {
+	var payload DBPayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Validate to allow only SELECT
+	if len(payload.Query) < 6 ||
+		!isSelectQuery(payload.Query) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "only SELECT queries are allowed"})
+		return
+	}
+
+	db, err := openDB(payload)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer db.Close()
+
+	rows, err := db.Query(payload.Query)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer rows.Close()
+
+	columns, err := rows.ColumnTypes()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var results []map[string]interface{}
+
+	for rows.Next() {
+		values := make([]interface{}, len(columns))
+		for i := range values {
+			values[i] = new(interface{})
+		}
+
+		if err := rows.Scan(values...); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		row := make(map[string]interface{})
+		for i, col := range columns {
+			val := *(values[i].(*interface{}))
+			if b, ok := val.([]byte); ok {
+				row[col.Name()] = string(b)
+			} else {
+				row[col.Name()] = val
+			}
+		}
+
+		results = append(results, row)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": results})
+}
+
+func isSelectQuery(q string) bool {
+	// Basic check; you can make this more robust
+	return len(q) >= 6 && (q[0:6] == "SELECT" ||
+		q[0:6] == "select")
 }
