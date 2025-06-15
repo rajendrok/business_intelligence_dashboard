@@ -1,0 +1,272 @@
+package main
+
+import (
+	"database/sql"
+	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
+)
+
+type DBPayload struct {
+	Username string   `json:"username"`
+	Password string   `json:"password"`
+	Host     string   `json:"host"`
+	Port     int      `json:"port"`
+	Database string   `json:"database"`
+	Driver   string   `json:"driver"` // "postgres" or "mysql"
+	Tables   []string `json:"tables"`
+	Limit    int      `json:"limit"`
+	Offset   int      `json:"offset"`
+}
+
+func main() {
+	r := gin.Default()
+	r.Use(CORSMiddleware())
+	r.POST("/db-schema", handleDBSchema)
+	r.POST("/table-data", handleFetchTableData)
+
+	r.Run(":8080")
+}
+func CORSMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Requested-With")
+		c.Header("Access-Control-Expose-Headers", "Content-Disposition")
+		c.Header("Access-Control-Allow-Credentials", "true")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(http.StatusOK)
+			return
+		}
+		c.Next()
+	}
+}
+
+func handleFetchTableData(c *gin.Context) {
+	var payload DBPayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	db, err := openDB(payload)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer db.Close()
+
+	result := make(map[string][]map[string]interface{})
+	for _, table := range payload.Tables {
+		rows, err := fetchTableData(db, table, payload.Limit, payload.Offset, payload.Driver)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "table": table})
+			return
+		}
+		result[table] = rows
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": result})
+}
+func fetchTableData(db *sql.DB, table string, limit, offset int, driver string) ([]map[string]interface{}, error) {
+	var query string
+	if driver == "postgres" {
+		query = fmt.Sprintf(`SELECT * FROM %s LIMIT %d OFFSET %d`, table, limit, offset)
+	} else if driver == "mysql" {
+		query = fmt.Sprintf("SELECT * FROM %s LIMIT %d OFFSET %d", table, limit, offset)
+	} else {
+		return nil, fmt.Errorf("unsupported driver")
+	}
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	columns, err := rows.ColumnTypes()
+	if err != nil {
+		return nil, err
+	}
+
+	var results []map[string]interface{}
+
+	for rows.Next() {
+		values := make([]interface{}, len(columns))
+		for i := range values {
+			values[i] = new(interface{})
+		}
+
+		if err := rows.Scan(values...); err != nil {
+			return nil, err
+		}
+
+		row := make(map[string]interface{})
+		for i, col := range columns {
+			val := *(values[i].(*interface{}))
+			// If it's a []byte, convert it to a string
+			if b, ok := val.([]byte); ok {
+				row[col.Name()] = string(b)
+			} else {
+				row[col.Name()] = val
+			}
+		}
+
+		results = append(results, row)
+	}
+
+	return results, nil
+}
+
+func handleDBSchema(c *gin.Context) {
+	var payload DBPayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	printLog("Received Payload", payload)
+
+	db, err := openDB(payload)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer db.Close()
+	printLog("Database connected successfully.", payload.Database)
+
+	tableNames, err := getTableNames(db, payload.Driver, payload.Database)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	printLog("Fetched table and view names.", tableNames)
+
+	result := map[string]map[string][]string{
+		"tables": {},
+		"views":  {},
+	}
+
+	for _, table := range tableNames["tables"] {
+		columns, err := getColumnNames(db, table, payload.Driver)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		result["tables"][table] = columns
+	}
+
+	for _, view := range tableNames["views"] {
+		columns, err := getColumnNames(db, view, payload.Driver)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		result["views"][view] = columns
+	}
+
+	c.JSON(http.StatusOK, gin.H{"schema": result})
+}
+
+func openDB(payload DBPayload) (*sql.DB, error) {
+	var dsn string
+	if payload.Driver == "postgres" {
+		dsn = fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable",
+			payload.Username, payload.Password, payload.Host, payload.Port, payload.Database)
+	} else if payload.Driver == "mysql" {
+		dsn = fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
+			payload.Username, payload.Password, payload.Host, payload.Port, payload.Database)
+	} else {
+		return nil, fmt.Errorf("unsupported driver")
+	}
+
+	fmt.Printf("[+] Connecting to %s at %s\n", payload.Driver, dsn)
+
+	return sql.Open(payload.Driver, dsn)
+}
+
+func getTableNames(db *sql.DB, driver, database string) (map[string][]string, error) {
+	result := map[string][]string{
+		"tables": {},
+		"views":  {},
+	}
+	var query string
+
+	if driver == "mysql" {
+		query = `SELECT TABLE_NAME, TABLE_TYPE FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = ?`
+	} else if driver == "postgres" {
+		query = `SELECT table_name, table_type FROM information_schema.tables WHERE table_schema='public'`
+	} else {
+		return nil, fmt.Errorf("unsupported driver")
+	}
+
+	rows, err := db.Query(query, database)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var name, tableType string
+		if err := rows.Scan(&name, &tableType); err != nil {
+			return nil, err
+		}
+
+		if tableType == "BASE TABLE" {
+			result["tables"] = append(result["tables"], name)
+		} else if tableType == "VIEW" {
+			result["views"] = append(result["views"], name)
+		}
+	}
+
+	return result, nil
+}
+
+func getColumnNames(db *sql.DB, table, driver string) ([]string, error) {
+	var query string
+	var rows *sql.Rows
+	var err error
+
+	if driver == "postgres" {
+		query = `SELECT column_name FROM information_schema.columns WHERE table_name=$1`
+		rows, err = db.Query(query, table)
+	} else if driver == "mysql" {
+		query = `SHOW COLUMNS FROM ` + table
+		rows, err = db.Query(query)
+	} else {
+		return nil, fmt.Errorf("unsupported driver")
+	}
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var columns []string
+	for rows.Next() {
+		if driver == "postgres" {
+			var column string
+			if err := rows.Scan(&column); err != nil {
+				return nil, err
+			}
+			columns = append(columns, column)
+		} else if driver == "mysql" {
+			var field, colType, isNull, key, extra string
+			var defVal sql.NullString
+			if err := rows.Scan(&field, &colType, &isNull, &key, &defVal, &extra); err != nil {
+				return nil, err
+			}
+			columns = append(columns, field)
+		}
+	}
+
+	return columns, nil
+}
+
+func printLog(description string, data interface{}) {
+	fmt.Printf("[LOG] %s: %+v\n", description, data)
+}
