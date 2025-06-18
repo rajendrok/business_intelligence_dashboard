@@ -36,3 +36,11 @@
     transform: rotate(360deg);
   }
 }
+
+#visualise_button{
+
+border-radius: 12%;
+margin-top: 10vh;
+margin-left: 30vw;
+
+}

@@ -1,0 +1,25 @@
+#textarea {
+  width: 30vw;
+  height: 150px;
+  padding: 10px;
+  font-size: 16px;
+  line-height: 1.5;
+  resize: vertical;
+  box-sizing: border-box;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+#for_query {
+
+margin-left: 20vw ;
+margin-top: 20vh;
+
+}
+
+#query-submit-button{
+
+    height: 40px;
+    width: 100px;
+    margin-left: 13vw;
+}

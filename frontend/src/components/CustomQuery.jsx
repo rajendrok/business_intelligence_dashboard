@@ -1,6 +1,6 @@
 import React from "react";
 
-function TableView({ tableData }) {
+function CustomQuery({ tableData }) {
     if (!tableData) return null;
 
     // If it's custom query, it's likely a flat array of rows
@@ -36,7 +36,7 @@ function TableView({ tableData }) {
     } else if (tableData?.data) {
         // If it's from your table API
         return (
-            <div>
+            <div id="table_div">
                 <h2>Table Data</h2>
                 {Object.entries(tableData.data).map(([tableName, rows]) => (
                     <div key={tableName}>
@@ -68,6 +68,9 @@ function TableView({ tableData }) {
 
                     </div>
                 ))}
+
+            
+
             </div>
         )
     } else {
@@ -75,4 +78,4 @@ function TableView({ tableData }) {
     }
 }
 
-export default TableView;
+export default CustomQuery;
