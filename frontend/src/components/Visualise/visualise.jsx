@@ -30,6 +30,23 @@ const nivoLineData = [
     ]
   }
 ];
+const getChartLabel = (type) => {
+  switch (type) {
+    case 0: return "Line Chart";
+    case 1: return "Bar Chart";
+    case 2: return "Pie Chart";
+    case 3: return "Radar Chart";
+    case 4: return "Scatter Chart";
+    case 5: return "Area Chart";
+    case 6: return "Radial Bar Chart";
+    case 7: return "Treemap";
+    case 8: return "ECharts Bar";
+    case 9: return "ECharts Pie";
+    case 10: return "Nivo Line";
+    case 11: return "Nivo Pie";
+    default: return "Custom Box";
+  }
+};
 
 const nivoPieData = data.map((item, index) => ({
   id: item.name,
@@ -43,9 +60,17 @@ const Visualise = () => {
 
   for (let i = 1; i <= 100; i++) {
     const type = i % 15;
+    const chartLabel = getChartLabel(type);
+
+    const ChartWrapper = (chart) => (
+      <div key={i} style={{ width: 300, textAlign: "center" }}>
+        {chart}
+        <p style={{ marginTop: "0.5rem", fontWeight: "bold" }}>{chartLabel} {i}</p>
+      </div>
+    );
 
     if (type === 0) {
-      chartList.push(
+      chartList.push(ChartWrapper(
         <LineChart key={i} width={300} height={200} data={data}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="name" />
@@ -53,9 +78,9 @@ const Visualise = () => {
           <Tooltip />
           <Line type="monotone" dataKey="uv" stroke={COLORS[i % COLORS.length]} />
         </LineChart>
-      );
+      ));
     } else if (type === 1) {
-      chartList.push(
+      chartList.push(ChartWrapper(
         <BarChart key={i} width={300} height={200} data={data}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="name" />
@@ -63,7 +88,7 @@ const Visualise = () => {
           <Tooltip />
           <Bar dataKey="pv" fill={COLORS[i % COLORS.length]} />
         </BarChart>
-      );
+      ));
     } else if (type === 2) {
       chartList.push(
         <PieChart key={i} width={300} height={200}>
