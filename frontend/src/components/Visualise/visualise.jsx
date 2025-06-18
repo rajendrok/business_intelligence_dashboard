@@ -90,7 +90,7 @@ const Visualise = () => {
         </BarChart>
       ));
     } else if (type === 2) {
-      chartList.push(
+      chartList.push(ChartWrapper(
         <PieChart key={i} width={300} height={200}>
           <Pie data={data} dataKey="value" outerRadius={80}>
             {data.map((entry, index) => (
@@ -99,18 +99,18 @@ const Visualise = () => {
           </Pie>
           <Tooltip />
         </PieChart>
-      );
+      ));
     } else if (type === 3) {
-      chartList.push(
+      chartList.push(ChartWrapper(
         <RadarChart key={i} outerRadius={80} width={300} height={200} data={data}>
           <PolarGrid />
           <PolarAngleAxis dataKey="name" />
           <PolarRadiusAxis />
           <Radar dataKey="uv" stroke={COLORS[i % COLORS.length]} fill={COLORS[i % COLORS.length]} fillOpacity={0.6} />
         </RadarChart>
-      );
+      ));
     } else if (type === 4) {
-      chartList.push(
+      chartList.push(ChartWrapper(
         <ScatterChart key={i} width={300} height={200}>
           <CartesianGrid />
           <XAxis dataKey="name" type="category" />
@@ -118,9 +118,9 @@ const Visualise = () => {
           <Tooltip />
           <Scatter data={data} fill={COLORS[i % COLORS.length]} />
         </ScatterChart>
-      );
+      ));
     } else if (type === 5) {
-      chartList.push(
+      chartList.push(ChartWrapper(
         <AreaChart key={i} width={300} height={200} data={data}>
           <XAxis dataKey="name" />
           <YAxis />
@@ -128,18 +128,18 @@ const Visualise = () => {
           <Tooltip />
           <Area dataKey="uv" stroke={COLORS[i % COLORS.length]} fill={COLORS[i % COLORS.length]} />
         </AreaChart>
-      );
+      ));
     } else if (type === 6) {
-      chartList.push(
+      chartList.push(ChartWrapper(
         <RadialBarChart key={i} width={300} height={200} innerRadius="20%" outerRadius="80%" data={data} startAngle={180} endAngle={0}>
           <RadialBar background dataKey="uv" />
           <Tooltip />
         </RadialBarChart>
-      );
+       ) );
     } else if (type === 7) {
-      chartList.push(
+      chartList.push(ChartWrapper(
         <Treemap key={i} width={300} height={200} data={data} dataKey="value" ratio={4/3} stroke="#fff" fill={COLORS[i % COLORS.length]} />
-      );
+      ));
     } else if (type === 8) {
       const option = {
         tooltip: {},
@@ -151,7 +151,7 @@ const Visualise = () => {
           itemStyle: { color: COLORS[i % COLORS.length] }
         }]
       };
-      chartList.push(<ReactECharts key={i} option={option} style={{ height: 200, width: 300 }} />);
+      chartList.push(ChartWrapper(<ReactECharts key={i} option={option} style={{ height: 200, width: 300 }} />));
     } else if (type === 9) {
       const option = {
         tooltip: {},
@@ -164,25 +164,25 @@ const Visualise = () => {
           }
         ]
       };
-      chartList.push(<ReactECharts key={i} option={option} style={{ height: 200, width: 300 }} />);
+      chartList.push(ChartWrapper(<ReactECharts key={i} option={option} style={{ height: 200, width: 300 }} />));
     } else if (type === 10) {
-      chartList.push(
+      chartList.push(ChartWrapper(
         <div key={i} style={{ height: 200, width: 300 }}>
           <ResponsiveLine data={nivoLineData} colors={COLORS[i % COLORS.length]} />
         </div>
-      );
+      ));
     } else if (type === 11) {
-      chartList.push(
+      chartList.push(ChartWrapper(
         <div key={i} style={{ height: 200, width: 300 }}>
           <ResponsivePie data={nivoPieData} colors={COLORS} />
         </div>
-      );
+      ));
     } else {
-      chartList.push(
+      chartList.push(ChartWrapper(
         <div key={i} style={{ height: 200, width: 300, background: COLORS[i % COLORS.length], display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff' }}>
           <h3>Custom Box {i}</h3>
         </div>
-      );
+      ));
     }
   }
 
