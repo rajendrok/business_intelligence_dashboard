@@ -189,7 +189,7 @@ const Visualise = () => {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "1rem", padding: "1rem" }}>
       {chartList}
-    </div>
+    </div> 
   );
 };
 
