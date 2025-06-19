@@ -1,21 +1,43 @@
 import React, { useState } from "react";
 import './SchemaView.css';
-import Visualise from './Visualise/visualise'; // ✅ adjust path if needed
+import Visualise from './Visualise/visualise'; // adjust path if needed
 
-function SchemaView({ schema, onSelectTable }) {
+function SchemaView({ schema }) {
+  const [selectedTables, setSelectedTables] = useState({});
+  const [selectedColumns, setSelectedColumns] = useState({});
+
+  const handleSelectTable = (table, isChecked) => {
+    setSelectedTables((prev) => ({
+      ...prev,
+      [table]: isChecked,
+    }));
+  };
+
+  const handleSelectColumn = (table, column, isChecked) => {
+    setSelectedColumns((prev) => {
+      const updated = { ...prev };
+      if (!updated[table]) updated[table] = {};
+      updated[table][column] = isChecked;
+      return updated;
+    });
+  };
+
   if (!schema) return null;
 
   return (
     <div className="schema-container">
       <div className="schema-main">
-        <div className="schema-tables">
-          <h2>Tables</h2>
+        {/* ✅ Scrollable Tables */}
+        <div className="schema-tables scrollable-section">
+          <div id="tables_heading"><h2 id="tables_head">Tables</h2></div>
           {Object.entries(schema.tables).map(([table, columns]) => (
             <TableAccordion
               key={table}
               table={table}
               columns={columns}
-              onSelectTable={onSelectTable}
+              onSelectTable={handleSelectTable}
+              onSelectColumn={handleSelectColumn}
+              selectedColumns={selectedColumns[table] || {}}
             />
           ))}
         </div>
@@ -33,14 +55,17 @@ function SchemaView({ schema, onSelectTable }) {
         </div>
       </div>
 
-      <div className="schema-views">
-        <h2>Views</h2>
+      {/* ✅ Scrollable Views */}
+      <div className="schema-views scrollable-section">
+       <div id="views_heading"><h2>Views</h2></div> 
         {Object.entries(schema.views).map(([view, columns]) => (
           <TableAccordion
             key={view}
             table={view}
             columns={columns}
-            onSelectTable={onSelectTable}
+            onSelectTable={handleSelectTable}
+            onSelectColumn={handleSelectColumn}
+            selectedColumns={selectedColumns[view] || {}}
           />
         ))}
       </div>
@@ -48,7 +73,7 @@ function SchemaView({ schema, onSelectTable }) {
   );
 }
 
-function TableAccordion({ table, columns, onSelectTable }) {
+function TableAccordion({ table, columns, onSelectTable, onSelectColumn, selectedColumns }) {
   const [open, setOpen] = useState(false);
   const [checked, setChecked] = useState(false);
 
@@ -58,8 +83,9 @@ function TableAccordion({ table, columns, onSelectTable }) {
         type="checkbox"
         checked={checked}
         onChange={(e) => {
-          setChecked(e.target.checked);
-          onSelectTable(table, e.target.checked);
+          const isChecked = e.target.checked;
+          setChecked(isChecked);
+          onSelectTable(table, isChecked);
         }}
       />
       <span
@@ -72,7 +98,14 @@ function TableAccordion({ table, columns, onSelectTable }) {
       {open && (
         <ul>
           {columns?.map((col) => (
-            <li key={col}>{col}</li>
+            <li key={col}>
+              <input
+                type="checkbox"
+                checked={!!selectedColumns[col]}
+                onChange={(e) => onSelectColumn(table, col, e.target.checked)}
+              />
+              <span style={{ marginLeft: "8px" }}>{col}</span>
+            </li>
           ))}
         </ul>
       )}

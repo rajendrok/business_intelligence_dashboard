@@ -11,21 +11,30 @@
 
 .schema-tables {
   width: 20vw;
+  max-height: 90vh;         /* ✅ Set fixed height for scrolling */
+  overflow-y: auto;         /* ✅ Scrollable vertically */
+  overflow-x: hidden;
+  border: 1px solid #ccc;   /* ✅ Optional: visual boundary */
+  border-radius: 4px;
+  background-color: #f9f9f9;
+  padding-top: -1px;
+
 }
 
 .schema-query {
   display: flex;
   flex-direction: column;
-  width: 50vw;            /* ✅ adjust this if you want wider/narrower */
-  margin-left: 10vw;      /* ✅ optional, for spacing to the right of tables */
+  width: 50vw;
+  margin-left: 10vw;
 }
 
 .query-textarea {
-  width: 100%;            /* ✅ takes full width of .schema-query */
+  width: 100%;
   height: 200px;
   resize: vertical;
   margin-bottom: 10px;
   padding: 10px;
+
   font-size: 16px;
 }
 
@@ -46,22 +55,53 @@
 
 #graph_list {
   margin-top: 20vh;
-  height:60vh;            /* ✅ fixed height */
-  width: 100%;             /* ✅ fills the width of .schema-query */
-  overflow-y: auto;        /* ✅ scroll if needed */
-  overflow-x: hidden;      /* ✅ no horizontal scroll */
+  height: 60vh;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
   background-color: #f5f5f5;
-  border: 2px solid #ccc;  /* ✅ for testing/visibility */
+  border: 2px solid #ccc;
   padding: 10px;
 }
 
+/* ✅ Make Views scrollable and matching Tables style */
 .schema-views {
+  margin-top: -16vh;
   width: 20%;
+  max-height: 70vh;         /* ✅ Same height as schema-tables */
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+  padding: -1px;
 }
 
 .accordion {
   border: 1px solid #ccc;
   margin: 5px 0;
-  padding: 10px;
+  padding: 8px;
   border-radius: 4px;
+  background-color: #fff;
 }
+
+.accordion ul {
+  list-style-type: none;
+  padding-left: 20px;
+  margin-top: 8px;
+}
+
+.accordion li {
+  margin-bottom: 4px;
+}
+
+#views_heading,
+#tables_heading{
+   height: 10vh;
+  background-color: #eee;
+  border-bottom: 1px solid #ccc;
+  position: sticky;       /* ✅ Makes it stay at the top while scrolling */
+  top: 0;
+  z-index: 1;
+}
+
