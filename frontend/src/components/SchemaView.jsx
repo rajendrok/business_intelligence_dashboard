@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import './SchemaView.css';
-import Visualise from './Visualise/visualise'; // adjust path if needed
+import Visualise from './Visualise/visualise';
 
-function SchemaView({ schema }) {
+function SchemaView({ schema, onSelectTable }) { // ✅ Added onSelectTable from props
   const [selectedTables, setSelectedTables] = useState({});
   const [selectedColumns, setSelectedColumns] = useState({});
 
@@ -11,6 +11,7 @@ function SchemaView({ schema }) {
       ...prev,
       [table]: isChecked,
     }));
+    onSelectTable(table, isChecked); // ✅ Inform HomePage of the selected tables
   };
 
   const handleSelectColumn = (table, column, isChecked) => {
@@ -27,7 +28,6 @@ function SchemaView({ schema }) {
   return (
     <div className="schema-container">
       <div className="schema-main">
-        {/* ✅ Scrollable Tables */}
         <div className="schema-tables scrollable-section">
           <div id="tables_heading"><h2 id="tables_head">Tables</h2></div>
           {Object.entries(schema.tables).map(([table, columns]) => (
@@ -55,9 +55,8 @@ function SchemaView({ schema }) {
         </div>
       </div>
 
-      {/* ✅ Scrollable Views */}
       <div className="schema-views scrollable-section">
-       <div id="views_heading"><h2>Views</h2></div> 
+        <div id="views_heading"><h2>Views</h2></div>
         {Object.entries(schema.views).map(([view, columns]) => (
           <TableAccordion
             key={view}

@@ -15,7 +15,7 @@ function HomePage() {
   const [selectedDb, setSelectedDb] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [schema, setSchema] = useState(null);
-  const [selectedTables, setSelectedTables] = useState([]);
+  const [selectedTables, setSelectedTables] = useState([]); // ✅ This will get updated by SchemaView
   const [credentials, setCredentials] = useState(null);
   const [tableData, setTableData] = useState([]);
   const [queryData, setQueryData] = useState(null);
@@ -60,7 +60,7 @@ function HomePage() {
   };
 
   const handleLoadData = async (page = 1, limit = 50) => {
-    if (!credentials) return;
+    if (!credentials || selectedTables.length === 0) return;
 
     try {
       const payload = {
@@ -69,7 +69,7 @@ function HomePage() {
         host,
         port,
         database,
-        driver: selectedDb,
+        driver, // ✅ FIXED - using correct driver (mysql)
         tables: selectedTables,
         page,
         limit,
@@ -123,7 +123,7 @@ function HomePage() {
       <h1>Database Schema Viewer</h1>
       <DatabaseSelector onSelect={handleSelect} />
       <CredentialsModal isOpen={isOpen} onSubmit={handleSubmit} onClose={() => setIsOpen(false)} />
-      
+
       {schema && (
         <>
           <SchemaView schema={schema} onSelectTable={handleSelectTable} />
