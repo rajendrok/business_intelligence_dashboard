@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import './SchemaView.css';
 import Visualise from './Visualise/visualise';
 
-function SchemaView({ schema, onSelectTable }) { // ✅ Added onSelectTable from props
+function SchemaView({ schema, onSelectTable }) {
   const [selectedTables, setSelectedTables] = useState({});
   const [selectedColumns, setSelectedColumns] = useState({});
 
@@ -11,7 +11,7 @@ function SchemaView({ schema, onSelectTable }) { // ✅ Added onSelectTable from
       ...prev,
       [table]: isChecked,
     }));
-    onSelectTable(table, isChecked); // ✅ Inform HomePage of the selected tables
+    onSelectTable(table, isChecked); // ✅ Notify HomePage about table selection
   };
 
   const handleSelectColumn = (table, column, isChecked) => {

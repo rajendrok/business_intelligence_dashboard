@@ -15,7 +15,7 @@ function HomePage() {
   const [selectedDb, setSelectedDb] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [schema, setSchema] = useState(null);
-  const [selectedTables, setSelectedTables] = useState([]); // ✅ This will get updated by SchemaView
+  const [selectedTables, setSelectedTables] = useState([]);
   const [credentials, setCredentials] = useState(null);
   const [tableData, setTableData] = useState([]);
   const [queryData, setQueryData] = useState(null);
@@ -57,10 +57,13 @@ function HomePage() {
     setSelectedTables((prev) =>
       isChecked ? [...prev, table] : prev.filter((t) => t !== table)
     );
+    setTableData([]);  // ✅ CLEAR previous data when table selection changes
   };
 
   const handleLoadData = async (page = 1, limit = 50) => {
     if (!credentials || selectedTables.length === 0) return;
+
+    setTableData([]); // ✅ Clear before fetching new data
 
     try {
       const payload = {
@@ -69,7 +72,7 @@ function HomePage() {
         host,
         port,
         database,
-        driver, // ✅ FIXED - using correct driver (mysql)
+        driver,
         tables: selectedTables,
         page,
         limit,
