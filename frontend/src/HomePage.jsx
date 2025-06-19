@@ -4,12 +4,12 @@ import CredentialsModal from "./components/CredentialsModal";
 import SchemaView from "./components/SchemaView";
 import CustomQuery from "./components/CustomQuery";
 
-var username = "root";
-var password = "Kush@789#";
-var host = "dev.wikibedtimestories.com";
-var database = "WBS";
-var driver = "mysql";
-var port = 31347;
+// var username = "root";
+// var password = "Kush@789#";
+// var host = "dev.wikibedtimestories.com";
+// var database = "WBS";
+// var driver = "mysql";
+// var port = 31347;
 
 function HomePage() {
   const [selectedDb, setSelectedDb] = useState('');
@@ -30,12 +30,18 @@ function HomePage() {
     setCredentials(creds);
     try {
       const payload = {
-        username,
-        password,
-        host,
-        port,
-        database,
-        driver,
+        // username,
+        // password,
+        // host,
+        // port,
+        // database,
+        // driver,
+        username: creds.username, 
+        password: creds.password,
+        host: creds.host,
+        port: Number(creds.port),
+        database: creds.database,
+        driver: selectedDb
       };
       const res = await fetch("http://localhost:8080/db-schema", {
         method: 'POST',
@@ -67,12 +73,21 @@ function HomePage() {
 
     try {
       const payload = {
-        username,
-        password,
-        host,
-        port,
-        database,
-        driver,
+        // username,
+        // password,
+        // host,
+        // port,
+        // database,
+        // driver,
+        // tables: selectedTables,
+        // page,
+        // limit,
+        username: credentials.username, 
+        password: credentials.password,
+        host: credentials.host,
+        port: Number(credentials.port),
+        database: credentials.database,
+        driver: selectedDb,
         tables: selectedTables,
         page,
         limit,
@@ -96,13 +111,20 @@ function HomePage() {
   const handleCustomQuery = async (query) => {
     try {
       const payload = {
-        username,
-        password,
-        host,
-        port,
-        database,
-        driver,
-        query,
+        // username,
+        // password,
+        // host,
+        // port,
+        // database,
+        // driver,
+        // query,
+        username: query.username, 
+        password: query.password,
+        host: query.host,
+        port: Number(query.port),
+        database: query.database,
+        driver: selectedDb,
+        query: query
       };
       const res = await fetch("http://localhost:8080/custom-query", {
         method: "POST",
