@@ -163,9 +163,6 @@ function HomePage() {
             </div>
           ))}
           <br />
-          <a href="/visualise">
-            <button style={{ width: "200px", height: "60px" }}>Visualise Data</button>
-          </a>
         </div>
       )}
 

@@ -4,12 +4,14 @@ import { ResponsivePie } from '@nivo/pie';
 import ReactECharts from 'echarts-for-react';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, RadarChart, Radar, ScatterChart, Scatter,
-  AreaChart, Area, RadialBarChart, RadialBar, Treemap, CartesianGrid, Tooltip, XAxis, YAxis, Legend,
+  AreaChart, Area, RadialBarChart, RadialBar, Treemap, CartesianGrid, Tooltip, XAxis, YAxis,
   PolarGrid, PolarAngleAxis, PolarRadiusAxis, Cell
 } from "recharts";
 
+// ✅ Color palette for charts
 const COLORS = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe'];
 
+// ✅ Sample data used in charts
 const data = [
   { name: 'A', value: 400, uv: 2400, pv: 2400 },
   { name: 'B', value: 300, uv: 1398, pv: 2210 },
@@ -18,6 +20,7 @@ const data = [
   { name: 'E', value: 189, uv: 4800, pv: 2181 },
 ];
 
+// ✅ Data for Nivo Line Chart
 const nivoLineData = [
   {
     id: "Series 1",
@@ -30,6 +33,16 @@ const nivoLineData = [
     ]
   }
 ];
+
+// ✅ Data for Nivo Pie Chart
+const nivoPieData = data.map((item, index) => ({
+  id: item.name,
+  label: item.name,
+  value: item.value,
+  color: COLORS[index % COLORS.length]
+}));
+
+// ✅ Function to get Chart Type label
 const getChartLabel = (type) => {
   switch (type) {
     case 0: return "Line Chart";
@@ -48,12 +61,17 @@ const getChartLabel = (type) => {
   }
 };
 
-const nivoPieData = data.map((item, index) => ({
-  id: item.name,
-  label: item.name,
-  value: item.value,
-  color: COLORS[index % COLORS.length]
-}));
+// ✅ Clean Chart Wrapper (CHANGED: key={key} ✅)
+const ChartWrapper = (chart, chartLabel, key) => (
+  <div
+    key={key}
+    style={{ width: 300, textAlign: "center", cursor: "pointer" }}
+    onClick={() => console.log(`Clicked on: ${chartLabel} ${key}`)}
+  >
+    {chart}
+    <p style={{ marginTop: "0.5rem", fontWeight: "bold" }}>{chartLabel} {key}</p>
+  </div>
+);
 
 const Visualise = () => {
   const chartList = [];
@@ -62,83 +80,76 @@ const Visualise = () => {
     const type = i % 15;
     const chartLabel = getChartLabel(type);
 
-    const ChartWrapper = (chart) => (
-      <div key={i} style={{ width: 300, textAlign: "center" }}>
-        {chart}
-        <p style={{ marginTop: "0.5rem", fontWeight: "bold" }}>{chartLabel} {i}</p>
-      </div>
-    );
-
     if (type === 0) {
       chartList.push(ChartWrapper(
-        <LineChart key={i} width={300} height={200} data={data}>
+        <LineChart width={300} height={200} data={data}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="name" />
           <YAxis />
           <Tooltip />
           <Line type="monotone" dataKey="uv" stroke={COLORS[i % COLORS.length]} />
-        </LineChart>
+        </LineChart>, chartLabel, i
       ));
     } else if (type === 1) {
       chartList.push(ChartWrapper(
-        <BarChart key={i} width={300} height={200} data={data}>
+        <BarChart width={300} height={200} data={data}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="name" />
           <YAxis />
           <Tooltip />
           <Bar dataKey="pv" fill={COLORS[i % COLORS.length]} />
-        </BarChart>
+        </BarChart>, chartLabel, i
       ));
     } else if (type === 2) {
       chartList.push(ChartWrapper(
-        <PieChart key={i} width={300} height={200}>
+        <PieChart width={300} height={200}>
           <Pie data={data} dataKey="value" outerRadius={80}>
             {data.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
           <Tooltip />
-        </PieChart>
+        </PieChart>, chartLabel, i
       ));
     } else if (type === 3) {
       chartList.push(ChartWrapper(
-        <RadarChart key={i} outerRadius={80} width={300} height={200} data={data}>
+        <RadarChart outerRadius={80} width={300} height={200} data={data}>
           <PolarGrid />
           <PolarAngleAxis dataKey="name" />
           <PolarRadiusAxis />
           <Radar dataKey="uv" stroke={COLORS[i % COLORS.length]} fill={COLORS[i % COLORS.length]} fillOpacity={0.6} />
-        </RadarChart>
+        </RadarChart>, chartLabel, i
       ));
     } else if (type === 4) {
       chartList.push(ChartWrapper(
-        <ScatterChart key={i} width={300} height={200}>
+        <ScatterChart width={300} height={200}>
           <CartesianGrid />
           <XAxis dataKey="name" type="category" />
           <YAxis dataKey="value" />
           <Tooltip />
           <Scatter data={data} fill={COLORS[i % COLORS.length]} />
-        </ScatterChart>
+        </ScatterChart>, chartLabel, i
       ));
     } else if (type === 5) {
       chartList.push(ChartWrapper(
-        <AreaChart key={i} width={300} height={200} data={data}>
+        <AreaChart width={300} height={200} data={data}>
           <XAxis dataKey="name" />
           <YAxis />
           <CartesianGrid strokeDasharray="3 3" />
           <Tooltip />
           <Area dataKey="uv" stroke={COLORS[i % COLORS.length]} fill={COLORS[i % COLORS.length]} />
-        </AreaChart>
+        </AreaChart>, chartLabel, i
       ));
     } else if (type === 6) {
       chartList.push(ChartWrapper(
-        <RadialBarChart key={i} width={300} height={200} innerRadius="20%" outerRadius="80%" data={data} startAngle={180} endAngle={0}>
+        <RadialBarChart width={300} height={200} innerRadius="20%" outerRadius="80%" data={data} startAngle={180} endAngle={0}>
           <RadialBar background dataKey="uv" />
           <Tooltip />
-        </RadialBarChart>
-       ) );
+        </RadialBarChart>, chartLabel, i
+      ));
     } else if (type === 7) {
       chartList.push(ChartWrapper(
-        <Treemap key={i} width={300} height={200} data={data} dataKey="value" ratio={4/3} stroke="#fff" fill={COLORS[i % COLORS.length]} />
+        <Treemap width={300} height={200} data={data} dataKey="value" ratio={4 / 3} stroke="#fff" fill={COLORS[i % COLORS.length]} />, chartLabel, i
       ));
     } else if (type === 8) {
       const option = {
@@ -151,45 +162,55 @@ const Visualise = () => {
           itemStyle: { color: COLORS[i % COLORS.length] }
         }]
       };
-      chartList.push(ChartWrapper(<ReactECharts key={i} option={option} style={{ height: 200, width: 300 }} />));
+      chartList.push(ChartWrapper(
+        <ReactECharts option={option} style={{ height: 200, width: 300 }} />, chartLabel, i
+      ));
     } else if (type === 9) {
       const option = {
         tooltip: {},
-        series: [
-          {
-            type: 'pie',
-            radius: ['40%', '70%'],
-            data: data.map((item, index) => ({ value: item.value, name: item.name })),
-            color: COLORS
-          }
-        ]
+        series: [{
+          type: 'pie',
+          radius: ['40%', '70%'],
+          data: data.map((item) => ({ value: item.value, name: item.name })),
+          color: COLORS
+        }]
       };
-      chartList.push(ChartWrapper(<ReactECharts key={i} option={option} style={{ height: 200, width: 300 }} />));
+      chartList.push(ChartWrapper(
+        <ReactECharts option={option} style={{ height: 200, width: 300 }} />, chartLabel, i
+      ));
     } else if (type === 10) {
       chartList.push(ChartWrapper(
-        <div key={i} style={{ height: 200, width: 300 }}>
+        <div style={{ height: 200, width: 300 }}>
           <ResponsiveLine data={nivoLineData} colors={COLORS[i % COLORS.length]} />
-        </div>
+        </div>, chartLabel, i
       ));
     } else if (type === 11) {
       chartList.push(ChartWrapper(
-        <div key={i} style={{ height: 200, width: 300 }}>
+        <div style={{ height: 200, width: 300 }}>
           <ResponsivePie data={nivoPieData} colors={COLORS} />
-        </div>
+        </div>, chartLabel, i
       ));
     } else {
       chartList.push(ChartWrapper(
-        <div key={i} style={{ height: 200, width: 300, background: COLORS[i % COLORS.length], display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff' }}>
+        <div style={{
+          height: 200, width: 300,
+          background: COLORS[i % COLORS.length],
+          display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff'
+        }}>
           <h3>Custom Box {i}</h3>
-        </div>
+        </div>, chartLabel, i
       ));
     }
   }
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "1rem", padding: "1rem" }}>
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+      gap: "1rem", padding: "1rem"
+    }}>
       {chartList}
-    </div> 
+    </div>
   );
 };
 

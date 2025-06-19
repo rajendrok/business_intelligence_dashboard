@@ -1,13 +1,14 @@
-// src/components/SchemaView.js
 import React, { useState } from "react";
-import './SchemaView.css';  
+import './SchemaView.css';
+import Visualise from './Visualise/visualise'; // ✅ adjust path if needed
+
 function SchemaView({ schema, onSelectTable }) {
   if (!schema) return null;
 
   return (
-    <>
-      <div style={{ width: "50vh", display: "flex" }}>
-        <div id="for_table">
+    <div className="schema-container">
+      <div className="schema-main">
+        <div className="schema-tables">
           <h2>Tables</h2>
           {Object.entries(schema.tables).map(([table, columns]) => (
             <TableAccordion
@@ -18,13 +19,21 @@ function SchemaView({ schema, onSelectTable }) {
             />
           ))}
         </div>
-        <div id="for_query" style={{width :"40vw"}}>
-          <textarea id="textarea"/>
-           <button id="query-submit-button">Submit Query</button>
+
+        <div className="schema-query">
+          <textarea
+            className="query-textarea"
+            placeholder="Write your query here..."
+          />
+          <button className="query-submit-button">Submit Query</button>
+
+          <div id="graph_list">
+            <Visualise />
+          </div>
         </div>
       </div>
 
-      <div>
+      <div className="schema-views">
         <h2>Views</h2>
         {Object.entries(schema.views).map(([view, columns]) => (
           <TableAccordion
@@ -35,7 +44,7 @@ function SchemaView({ schema, onSelectTable }) {
           />
         ))}
       </div>
-    </>
+    </div>
   );
 }
 
@@ -44,7 +53,7 @@ function TableAccordion({ table, columns, onSelectTable }) {
   const [checked, setChecked] = useState(false);
 
   return (
-    <div style={{ border: "1px solid #ccc", margin: "5px", padding: "10px" }}>
+    <div className="accordion">
       <input
         type="checkbox"
         checked={checked}
