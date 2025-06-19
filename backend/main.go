@@ -177,16 +177,13 @@ func handleDBSchema(c *gin.Context) {
 func openDB(payload DBPayload) (*sql.DB, error) {
 	var dsn string
 	if payload.Driver == "postgres" {
-		dsn = fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable",
-			payload.Username, payload.Password, payload.Host, payload.Port, payload.Database)
+		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable",
+			payload.Host, payload.Username, payload.Password, payload.Database, payload.Port)
 	} else if payload.Driver == "mysql" {
-		dsn = fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
-			payload.Username, payload.Password, payload.Host, payload.Port, payload.Database)
+		dsn = fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", payload.Username, payload.Password, payload.Host, payload.Port, payload.Database)
 	} else {
 		return nil, fmt.Errorf("unsupported driver")
 	}
-
-	fmt.Printf("[+] Connecting to %s at %s\n", payload.Driver, dsn)
 
 	return sql.Open(payload.Driver, dsn)
 }
@@ -196,18 +193,22 @@ func getTableNames(db *sql.DB, driver, database string) (map[string][]string, er
 		"tables": {},
 		"views":  {},
 	}
-	var query string
+
+	var rows *sql.Rows
+	var err error
 
 	if driver == "mysql" {
-		query = `SELECT TABLE_NAME, TABLE_TYPE FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = ?`
+		query := `SELECT TABLE_NAME, TABLE_TYPE FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = ?`
+		rows, err = db.Query(query, database)
 	} else if driver == "postgres" {
-		query = `SELECT table_name, table_type FROM information_schema.tables WHERE table_schema='public'`
+		query := `SELECT table_name, table_type FROM information_schema.tables WHERE table_schema = 'public'`
+		rows, err = db.Query(query)
 	} else {
-		return nil, fmt.Errorf("unsupported driver")
+		return nil, fmt.Errorf("unsupported driver: %s", driver)
 	}
 
-	rows, err := db.Query(query, database)
 	if err != nil {
+		fmt.Println("error", err)
 		return nil, err
 	}
 	defer rows.Close()
