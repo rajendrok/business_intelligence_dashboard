@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import DatabaseSelector from "./components/DatabaseSelector";
 import CredentialsModal from "./components/CredentialsModal";
 import SchemaView from "./components/SchemaView";
-import CustomQuery from "./components/CustomQuery";
 
 // var username = "root";
 // var password = "Kush@789#";
@@ -108,41 +107,6 @@ function HomePage() {
     }
   };
 
-  const handleCustomQuery = async (query) => {
-    try {
-      const payload = {
-        // username,
-        // password,
-        // host,
-        // port,
-        // database,
-        // driver,
-        // query,
-        username: query.username, 
-        password: query.password,
-        host: query.host,
-        port: Number(query.port),
-        database: query.database,
-        driver: selectedDb,
-        query: query
-      };
-      const res = await fetch("http://localhost:8080/custom-query", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setQueryData(data);
-      } else {
-        console.error('API Error while executing custom query');
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   return (
     <div style={{ padding: '20px' }}>
       <h1>Database Schema Viewer</h1>
@@ -190,10 +154,6 @@ function HomePage() {
           <br />
         </div>
       )}
-
-      <div style={{ padding: '20px' }}>
-        <CustomQuery onExecute={handleCustomQuery} />
-      </div>
     </div>
   );
 }

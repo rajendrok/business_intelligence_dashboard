@@ -105,3 +105,24 @@
   z-index: 1;
 }
 
+.query-result-table table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.query-result-table th,
+.query-result-table td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+}
+
+.query-result-table th {
+  background-color: #f2f2f2;
+}
+
+.query-error {
+  color: red;
+  margin-top: 10px;
+}
