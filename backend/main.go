@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"regexp"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
@@ -18,6 +20,7 @@ type DBPayload struct {
 	Database string   `json:"database"`
 	Driver   string   `json:"driver"` // "postgres" or "mysql"
 	Tables   []string `json:"tables"`
+	Columns  []string `json:"columns"`
 	Limit    int      `json:"limit"`
 	Offset   int      `json:"offset"`
 	Query    string   `json:"query"`
@@ -64,7 +67,7 @@ func handleFetchTableData(c *gin.Context) {
 
 	result := make(map[string][]map[string]interface{})
 	for _, table := range payload.Tables {
-		rows, err := fetchTableData(db, table, payload.Limit, payload.Offset, payload.Driver)
+		rows, err := fetchTableData(db, table, payload.Limit, payload.Offset, payload.Driver, payload.Columns)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "table": table})
 			return
@@ -74,14 +77,28 @@ func handleFetchTableData(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"data": result})
 }
-func fetchTableData(db *sql.DB, table string, limit, offset int, driver string) ([]map[string]interface{}, error) {
+func fetchTableData(db *sql.DB, table string, limit, offset int, driver string, columns []string) ([]map[string]interface{}, error) {
+	// Validate table name to prevent SQL injection
+	if !isValidIdentifier(table) {
+		return nil, fmt.Errorf("invalid table name")
+	}
+
+	selectCols := "*"
+	if len(columns) > 0 {
+		for _, col := range columns {
+			if !isValidIdentifier(col) {
+				return nil, fmt.Errorf("invalid column name: %s", col)
+			}
+		}
+		selectCols = strings.Join(columns, ", ")
+	}
+
 	var query string
-	if driver == "postgres" {
-		query = fmt.Sprintf(`SELECT * FROM %s LIMIT %d OFFSET %d`, table, limit, offset)
-	} else if driver == "mysql" {
-		query = fmt.Sprintf("SELECT * FROM %s LIMIT %d OFFSET %d", table, limit, offset)
-	} else {
-		return nil, fmt.Errorf("unsupported driver")
+	switch driver {
+	case "postgres", "mysql":
+		query = fmt.Sprintf(`SELECT %s FROM %s LIMIT %d OFFSET %d`, selectCols, table, limit, offset)
+	default:
+		return nil, fmt.Errorf("unsupported driver: %s", driver)
 	}
 
 	rows, err := db.Query(query)
@@ -90,7 +107,7 @@ func fetchTableData(db *sql.DB, table string, limit, offset int, driver string) 
 	}
 	defer rows.Close()
 
-	columns, err := rows.ColumnTypes()
+	colTypes, err := rows.ColumnTypes()
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +115,7 @@ func fetchTableData(db *sql.DB, table string, limit, offset int, driver string) 
 	var results []map[string]interface{}
 
 	for rows.Next() {
-		values := make([]interface{}, len(columns))
+		values := make([]interface{}, len(colTypes))
 		for i := range values {
 			values[i] = new(interface{})
 		}
@@ -108,20 +125,27 @@ func fetchTableData(db *sql.DB, table string, limit, offset int, driver string) 
 		}
 
 		row := make(map[string]interface{})
-		for i, col := range columns {
+		for i, col := range colTypes {
 			val := *(values[i].(*interface{}))
-			// If it's a []byte, convert it to a string
 			if b, ok := val.([]byte); ok {
 				row[col.Name()] = string(b)
 			} else {
 				row[col.Name()] = val
 			}
 		}
-
 		results = append(results, row)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return results, nil
+}
+
+func isValidIdentifier(name string) bool {
+	re := regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
+	return re.MatchString(name)
 }
 
 func handleDBSchema(c *gin.Context) {
