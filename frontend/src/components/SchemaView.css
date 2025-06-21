@@ -1,8 +1,8 @@
 .schema-column-wrapper {
   display: flex;
   flex-direction: column;
-  height: 90vh;                  /* Full height for each DB column */
-  width: 20vw;                   /* You can adjust width as needed */
+  height: 90vh;
+  width: clamp(250px, 20vw, 400px);
   overflow-y: auto;
   overflow-x: hidden;
   border: 1px solid #ccc;
@@ -12,7 +12,6 @@
   padding: 10px;
 }
 
-/* Reusable section styling for Tables, Views, Graphs */
 .schema-section {
   border: 1px solid #aaa;
   border-radius: 4px;
@@ -32,20 +31,27 @@
   z-index: 2;
 }
 
-/* Scrollable list inside each section */
 .scrollable-list {
   overflow-y: auto;
   overflow-x: hidden;
-  max-height: 30vh;              /* Controls scrolling area height of tables/views */
+  max-height: 30vh;
 }
 
-/* Accordion (Table list UI) styling */
 .accordion {
   border: 1px solid #ccc;
   margin: 5px 0;
   padding: 8px;
   border-radius: 4px;
   background-color: #fff;
+}
+
+.accordion input[type="checkbox"] {
+  margin-right: 8px;
+}
+
+.accordion>label:hover {
+  background-color: #f0f0f0;
+  cursor: pointer;
 }
 
 .accordion ul {
@@ -58,14 +64,12 @@
   margin-bottom: 4px;
 }
 
-/* Optional: Scrollable Graphs area inside its section */
 .graph-scrollable {
   overflow-y: auto;
   overflow-x: hidden;
-  max-height: 30vh;              /* Control scroll size for graphs */
+  max-height: 30vh;
 }
 
-/* Query result table styles (if used later) */
 .query-result-table table {
   width: 100%;
   border-collapse: collapse;
@@ -81,9 +85,44 @@
 
 .query-result-table th {
   background-color: #f2f2f2;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .query-error {
   color: red;
   margin-top: 8px;
+}
+/* Fixed-size scrollable container for all tables */
+.fixed-table-container {
+  overflow: auto;
+  max-height: 300px;
+  min-height: 300px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: #fff;
+  margin-top: 10px;
+}
+
+/* Uniform table style */
+.fixed-table-container table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Sticky header for better UX */
+.fixed-table-container th {
+  position: sticky;
+  top: 0;
+  background-color: #f9f9f9;
+  z-index: 1;
+}
+
+/* Table cells */
+.fixed-table-container th,
+.fixed-table-container td {
+  padding: 6px;
+  border: 1px solid #ccc;
+  text-align: left;
 }

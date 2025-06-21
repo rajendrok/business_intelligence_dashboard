@@ -1,109 +1,80 @@
 import React, { useState } from "react";
 import './SchemaView.css';
-import Visualise from './Visualise/visualise';
 
-function SchemaView({ driver, schema, onSelectTable, onSubmitQuery }) {
-  const [selectedTables, setSelectedTables] = useState({});
-  const [selectedColumns, setSelectedColumns] = useState({});
-  const [customQuery, setCustomQuery] = useState('');
-
-  const handleSelectTable = (table, isChecked) => {
-    setSelectedTables((prev) => ({ ...prev, [table]: isChecked }));
-    onSelectTable(table, isChecked);
-  };
-
-  const handleSelectColumn = (table, column, isChecked) => {
-    setSelectedColumns((prev) => {
-      const updated = { ...prev };
-      if (!updated[table]) updated[table] = {};
-      updated[table][column] = isChecked;
-      return updated;
-    });
-  };
-
-  const handleRunQuery = () => {
-    if (customQuery.trim() === '') {
-      alert("Please enter a query.");
-      return;
-    }
-    onSubmitQuery(driver, customQuery);
-  };
-
+function SchemaView({ schema, selectedTables, onToggleColumn, onToggleTable }) {
   if (!schema) return null;
 
   return (
     <div className="schema-column-wrapper">
-      {/* Tables */}
+      {/* Tables Section */}
       <div className="schema-section">
         <h2>Tables</h2>
         <div className="scrollable-list">
-          {Object.entries(schema.tables).map(([table, columns]) => (
+          {Object.entries(schema.tables || {}).map(([table, columns]) => (
             <TableAccordion
               key={table}
               table={table}
               columns={columns}
-              onSelectTable={handleSelectTable}
-              onSelectColumn={handleSelectColumn}
-              selectedColumns={selectedColumns[table] || {}}
+              selectedColumns={selectedTables[table]}
+              onToggleColumn={onToggleColumn}
+              onToggleTable={onToggleTable}
             />
           ))}
         </div>
       </div>
 
-      {/* Views */}
+      {/* Views Section */}
       <div className="schema-section">
         <h2>Views</h2>
         <div className="scrollable-list">
-          {Object.entries(schema.views).map(([view, columns]) => (
+          {Object.entries(schema.views || {}).map(([view, columns]) => (
             <TableAccordion
               key={view}
               table={view}
               columns={columns}
-              onSelectTable={handleSelectTable}
-              onSelectColumn={handleSelectColumn}
-              selectedColumns={selectedColumns[view] || {}}
+              selectedColumns={selectedTables[view]}
+              onToggleColumn={onToggleColumn}
+              onToggleTable={onToggleTable}
             />
           ))}
         </div>
       </div>
-
-
     </div>
   );
 }
 
-function TableAccordion({ table, columns, onSelectTable, onSelectColumn, selectedColumns }) {
+function TableAccordion({ table, columns, selectedColumns, onToggleColumn, onToggleTable }) {
   const [open, setOpen] = useState(false);
-  const [checked, setChecked] = useState(false);
+  const tableChecked = selectedColumns !== undefined;
 
   return (
     <div className="accordion">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => {
-          const isChecked = e.target.checked;
-          setChecked(isChecked);
-          onSelectTable(table, isChecked);
-        }}
-      />
-      <span
-        onClick={() => setOpen((prev) => !prev)}
-        style={{ cursor: "pointer", marginLeft: "10px" }}
-      >
-        {open ? "[-]" : "[+]"} {table}
-      </span>
+      <label>
+        <input
+          type="checkbox"
+          checked={tableChecked}
+          onChange={(e) => onToggleTable(table, e.target.checked)}
+        />
+        <strong
+          style={{ marginLeft: "8px", cursor: "pointer" }}
+          onClick={() => setOpen((prev) => !prev)}
+        >
+          {open ? "[-]" : "[+]"} {table}
+        </strong>
+      </label>
 
-      {open && (
+      {open && tableChecked && (
         <ul>
-          {columns?.map((col) => (
+          {columns.map((col) => (
             <li key={col}>
-              <input
-                type="checkbox"
-                checked={!!selectedColumns[col]}
-                onChange={(e) => onSelectColumn(table, col, e.target.checked)}
-              />
-              <span style={{ marginLeft: "8px" }}>{col}</span>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={(selectedColumns || []).includes(col)}
+                  onChange={(e) => onToggleColumn(table, col, e.target.checked)}
+                />
+                <span style={{ marginLeft: "8px" }}>{col}</span>
+              </label>
             </li>
           ))}
         </ul>
