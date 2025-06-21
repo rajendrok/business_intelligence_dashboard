@@ -74,18 +74,6 @@ function SchemaView({ driver, schema, onSelectTable, onSubmitQuery }) {
           <Visualise />
         </div>
       </div>
-
-      {/* ✅ SQL Query Section */}
-      <div className="schema-section">
-        <h2>SQL Query</h2>
-        <textarea
-          placeholder="Write your SQL query here..."
-          value={customQuery}
-          onChange={(e) => setCustomQuery(e.target.value)}
-          style={{ width: "100%", height: "100px", marginBottom: "10px" }}
-        />
-        <button onClick={handleRunQuery}>Submit Query</button>
-      </div>
     </div>
   );
 }

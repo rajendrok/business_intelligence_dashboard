@@ -151,16 +151,18 @@ function HomePage() {
               {loadingConnections[driver] ? "Connecting..." : "✔ Connect"}
             </button>
 
+
+
             {schemas[driver] && (
               <>
+                {/* ✅ SQL Query Section for this driver */}
+                <CustomQueryBox creds={schemas[driver].creds} />
                 <SchemaView
                   driver={driver}
                   schema={schemas[driver].schema}
                   onSelectTable={(table, isChecked) => handleSelectTable(driver, table, isChecked)}
                 />
-
-                {/* ✅ SQL Query Section for this driver */}
-                <CustomQueryBox creds={schemas[driver].creds} />
+                      
               </>
             )}
           </div>
