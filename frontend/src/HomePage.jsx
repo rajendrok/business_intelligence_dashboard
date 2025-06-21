@@ -6,15 +6,22 @@ import CustomQueryBox from "./components/CustomQueryBox";
 import Visualise from "./components/Visualise/visualise";
 import "./index.css";
 
+// Utility function for consistent random color per key
+const getColorForKey = (key) => {
+  const colors = ["#ffe0e0", "#e0ffe0", "#e0e0ff", "#fff4e0", "#e0fff8", "#f8e0ff", "#f0e0ff"];
+  const hash = key.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return colors[hash % colors.length];
+};
+
 function HomePage() {
   const [connections, setConnections] = useState([]);
   const [schemas, setSchemas] = useState({});
   const [selectedTables, setSelectedTables] = useState({});
   const [tableData, setTableData] = useState({});
   const [customQueryResults, setCustomQueryResults] = useState({});
+  const [selectedGraphs, setSelectedGraphs] = useState({});
   const [loadingConnections, setLoadingConnections] = useState({});
   const [credentials, setCredentials] = useState({});
-  const [selectedCharts, setSelectedCharts] = useState({});
 
   const addConnection = (driver) => {
     const count = connections.filter((c) => c.driver === driver).length + 1;
@@ -30,7 +37,7 @@ function HomePage() {
     setCustomQueryResults((prev) => removeKey(prev, key));
     setCredentials((prev) => removeKey(prev, key));
     setLoadingConnections((prev) => removeKey(prev, key));
-    setSelectedCharts((prev) => removeKey(prev, key));
+    setSelectedGraphs((prev) => removeKey(prev, key));
   };
 
   const removeKey = (obj, key) => {
@@ -116,16 +123,14 @@ function HomePage() {
             style={{
               border: "1px solid black",
               padding: "10px",
-              minWidth: "320px",
-              maxWidth: "400px",
+              minWidth: "350px",
               position: "relative",
-              overflowX: "auto",
+              borderRadius: "8px",
             }}
           >
             <div style={{ textAlign: "center", fontWeight: "bold", fontSize: "18px", marginBottom: "10px" }}>
               {key.toUpperCase()}
             </div>
-
             <button
               onClick={() => removeConnection(key)}
               style={{ position: "absolute", top: "5px", right: "5px" }}
@@ -148,29 +153,28 @@ function HomePage() {
 
             {schemas[key] && (
               <>
-                <CustomQueryBox
+               <div style={{width:"20vw"}}>
+
+  <CustomQueryBox
                   creds={schemas[key].creds}
                   onResult={(result) =>
                     setCustomQueryResults((prev) => ({ ...prev, [key]: result }))
                   }
                 />
 
+               </div>
+             
                 <SchemaView
                   driver={driver}
                   schema={schemas[key].schema}
                   onSelectTable={(table, isChecked) => toggleTableSelection(key, table, isChecked)}
                 />
+                <div style={{width:"30vw"}}>
 
-                <div>
-                  <h3>Graphs</h3>
-                  <Visualise onSelectChart={(chart) => setSelectedCharts((prev) => ({ ...prev, [key]: chart }))} />
+                <Visualise onSelectChart={(chart) => setSelectedGraphs((prev) => ({ ...prev, [key]: chart }))} />
+
+
                 </div>
-
-                {selectedCharts[key] && (
-                  <div style={{ marginTop: "10px", padding: "10px", border: "1px solid gray" }}>
-                    {selectedCharts[key]}
-                  </div>
-                )}
               </>
             )}
           </div>
@@ -184,63 +188,112 @@ function HomePage() {
           </button>
 
           <div style={{ marginTop: "20px" }}>
-            {connections.map(({ key }) => (
-              <div key={key} style={{ marginBottom: "20px" }}>
-                {tableData[key] && Object.keys(tableData[key].data || {}).length > 0 && (
-                  <>
-                    {Object.entries(tableData[key].data).map(([tableName, rows]) => (
-                      <div key={tableName} style={{ marginBottom: "10px" }}>
-                        <h3>{tableName}</h3>
-                        <div style={{ overflowX: "auto" }}>
-                          <table border="1" cellPadding="5" style={{ borderCollapse: "collapse", width: "100%" }}>
-                            <thead>
-                              <tr>
-                                {Object.keys(rows[0] || {}).map((col) => (
-                                  <th key={col}>{col}</th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {rows.map((row, i) => (
-                                <tr key={i}>
-                                  {Object.entries(row).map(([col, val]) => (
-                                    <td key={col}>{val}</td>
+            {connections.map(({ key }) => {
+              const color = getColorForKey(key);
+              return (
+                <div
+                  key={key}
+                  style={{
+                    background: color,
+                    padding: "15px",
+                    borderRadius: "10px",
+                    marginBottom: "25px",
+                    border: "2px solid #888",
+                  }}
+                >
+                  <h2 style={{ textAlign: "center", marginBottom: "10px" }}>{key.toUpperCase()} Output</h2>
+
+                  {/* Tables */}
+                  {tableData[key] && Object.keys(tableData[key].data || {}).length > 0 && (
+                    <>
+                      {Object.entries(tableData[key].data).map(([tableName, rows]) => (
+                        <div key={tableName} style={{ marginBottom: "15px" }}>
+                          <h3>{tableName}</h3>
+                          <div style={{ overflowX: "auto" }}>
+                            <table
+                              border="1"
+                              cellPadding="5"
+                              style={{ borderCollapse: "collapse", width: "100%", backgroundColor: "#fff" }}
+                            >
+                              <thead>
+                                <tr>
+                                  {Object.keys(rows[0] || {}).map((col) => (
+                                    <th key={col}>{col}</th>
                                   ))}
                                 </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                              </thead>
+                              <tbody>
+                                {rows.map((row, i) => (
+                                  <tr key={i}>
+                                    {Object.entries(row).map(([col, val]) => (
+                                      <td key={col}>{val}</td>
+                                    ))}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </>
-                )}
+                      ))}
+                    </>
+                  )}
 
-                {customQueryResults[key] && Array.isArray(customQueryResults[key]) && (
-                  <div style={{ marginTop: "20px" }}>
-                    <h3>Custom Query Result for {key.toUpperCase()}</h3>
-                    <table border="1" cellPadding="5" style={{ borderCollapse: "collapse", width: "100%" }}>
-                      <thead>
-                        <tr>
-                          {Object.keys(customQueryResults[key][0] || {}).map((col) => (
-                            <th key={col}>{col}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {customQueryResults[key].map((row, i) => (
-                          <tr key={i}>
-                            {Object.entries(row).map(([col, val]) => (
-                              <td key={col}>{val}</td>
+                  {/* Query Results */}
+                  {customQueryResults[key] && Array.isArray(customQueryResults[key]) && (
+                    <div style={{ marginTop: "10px" }}>
+                      <h3>Custom Query Result for {key.toUpperCase()}</h3>
+                      <table
+                        border="1"
+                        cellPadding="5"
+                        style={{ borderCollapse: "collapse", width: "100%", backgroundColor: "#fff" }}
+                      >
+                        <thead>
+                          <tr>
+                            {Object.keys(customQueryResults[key][0] || {}).map((col) => (
+                              <th key={col}>{col}</th>
                             ))}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            ))}
+                        </thead>
+                        <tbody>
+                          {customQueryResults[key].map((row, i) => (
+                            <tr key={i}>
+                              {Object.entries(row).map(([col, val]) => (
+                                <td key={col}>{val}</td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* Graph */}
+              {selectedGraphs[key] && (
+  <div
+    style={{
+      marginTop: "15px",
+      padding: "10px",
+      background: "#fafafa",
+      border: "2px solid #ddd",
+      borderRadius: "10px",
+      boxShadow: "0 0 10px rgba(0,0,0,0.1)",
+      width: "70%",
+      height: "450px", // ✅ Large div
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+    }}
+  >
+    {/* ✅ Graph fills 100% */}
+    <div style={{ width: "100%", height: "100%" }}>
+      {selectedGraphs[key]}
+    </div>
+  </div>
+)}
+
+                </div>
+              );
+            })}
           </div>
         </>
       )}

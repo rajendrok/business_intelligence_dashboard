@@ -18,14 +18,14 @@ const data = [
   { name: "E", value: 189, uv: 4800, pv: 2181 },
 ];
 
-const nivoLineData = [{ id: "Series 1", data: data.map((d, idx) => ({ x: d.name, y: d.value })) }];
+const nivoLineData = [{ id: "Series 1", data: data.map((d) => ({ x: d.name, y: d.value })) }];
 const nivoPieData = data.map((item, index) => ({ id: item.name, label: item.name, value: item.value, color: COLORS[index % COLORS.length] }));
 
-function getChart(type) {
+function getChart(type, size = 160) {
   switch (type) {
     case 0:
       return (
-        <LineChart width={400} height={300} data={data}>
+        <LineChart width={size} height={size} data={data}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="name" />
           <YAxis />
@@ -35,7 +35,7 @@ function getChart(type) {
       );
     case 1:
       return (
-        <BarChart width={400} height={300} data={data}>
+        <BarChart width={size} height={size} data={data}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="name" />
           <YAxis />
@@ -45,8 +45,8 @@ function getChart(type) {
       );
     case 2:
       return (
-        <PieChart width={400} height={300}>
-          <Pie data={data} dataKey="value" outerRadius={80}>
+        <PieChart width={size} height={size}>
+          <Pie data={data} dataKey="value" outerRadius={size / 2.5}>
             {data.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
@@ -56,7 +56,7 @@ function getChart(type) {
       );
     case 3:
       return (
-        <RadarChart outerRadius={80} width={400} height={300} data={data}>
+        <RadarChart outerRadius={size / 2.5} width={size} height={size} data={data}>
           <PolarGrid />
           <PolarAngleAxis dataKey="name" />
           <PolarRadiusAxis />
@@ -65,7 +65,7 @@ function getChart(type) {
       );
     case 4:
       return (
-        <ScatterChart width={400} height={300}>
+        <ScatterChart width={size} height={size}>
           <CartesianGrid />
           <XAxis dataKey="name" type="category" />
           <YAxis dataKey="value" />
@@ -75,7 +75,7 @@ function getChart(type) {
       );
     case 5:
       return (
-        <AreaChart width={400} height={300} data={data}>
+        <AreaChart width={size} height={size} data={data}>
           <XAxis dataKey="name" />
           <YAxis />
           <CartesianGrid strokeDasharray="3 3" />
@@ -85,14 +85,14 @@ function getChart(type) {
       );
     case 6:
       return (
-        <RadialBarChart width={400} height={300} innerRadius="20%" outerRadius="80%" data={data} startAngle={180} endAngle={0}>
+        <RadialBarChart width={size} height={size} innerRadius="20%" outerRadius="80%" data={data} startAngle={180} endAngle={0}>
           <RadialBar background dataKey="uv" />
           <Tooltip />
         </RadialBarChart>
       );
     case 7:
       return (
-        <Treemap width={400} height={300} data={data} dataKey="value" ratio={4 / 3} stroke="#fff" fill={COLORS[5]} />
+        <Treemap width={size} height={size} data={data} dataKey="value" ratio={4 / 3} stroke="#fff" fill={COLORS[5]} />
       );
     case 8:
       return (
@@ -103,7 +103,7 @@ function getChart(type) {
             yAxis: {},
             series: [{ data: data.map((d) => d.value), type: "bar", itemStyle: { color: COLORS[6] } }],
           }}
-          style={{ width: 400, height: 300 }}
+          style={{ width: size, height: size }}
         />
       );
     case 9:
@@ -120,18 +120,18 @@ function getChart(type) {
               },
             ],
           }}
-          style={{ width: 400, height: 300 }}
+          style={{ width: size, height: size }}
         />
       );
     case 10:
       return (
-        <div style={{ width: 400, height: 300 }}>
-          <ResponsiveLine data={nivoLineData} />
+        <div style={{ width: size, height: size }}>
+          <ResponsiveLine data={nivoLineData} colors={COLORS} />
         </div>
       );
     case 11:
       return (
-        <div style={{ width: 400, height: 300 }}>
+        <div style={{ width: size, height: size }}>
           <ResponsivePie data={nivoPieData} colors={COLORS} />
         </div>
       );
@@ -139,14 +139,14 @@ function getChart(type) {
       return (
         <div
           style={{
-            width: 400,
-            height: 300,
+            width: size,
+            height: size,
             backgroundColor: COLORS[0],
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
             color: "#fff",
-            fontSize: "2rem",
+            fontSize: "1rem",
           }}
         >
           Custom Box
@@ -164,22 +164,31 @@ const Visualise = ({ onSelectChart }) => {
         style={{
           cursor: "pointer",
           border: "1px solid #ccc",
-          borderRadius: "4px",
-          margin: "5px",
-          padding: "5px",
-          width: "200px",
-          textAlign: "center",
+          borderRadius: "8px",
+          padding: "8px",
+          width: "calc(50% - 12px)", // ✅ Two per row with spacing
+          boxSizing: "border-box",
+          backgroundColor: "#f9f9f9",
         }}
-        onClick={() => onSelectChart(getChart(i % 12))}
+        onClick={() => onSelectChart(getChart(i % 12, 500))} // ✅ 500px graph on select
       >
-        {getChart(i % 12)}
-        <div style={{ fontSize: "12px", marginTop: "5px" }}>Chart {i + 1}</div>
+        {getChart(i % 12, 180)}
+        <div style={{ fontSize: "12px", marginTop: "5px", textAlign: "center" }}>Chart {i + 1}</div>
       </div>
     );
   }
 
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", overflowY: "auto", maxHeight: "300px" }}>
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "12px",
+        maxHeight: "320px",
+        overflowY: "auto",
+        padding: "5px",
+      }}
+    >
       {charts}
     </div>
   );
