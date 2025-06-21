@@ -13,17 +13,16 @@ import (
 )
 
 type DBPayload struct {
-	Username string   `json:"username"`
-	Password string   `json:"password"`
-	Host     string   `json:"host"`
-	Port     int      `json:"port"`
-	Database string   `json:"database"`
-	Driver   string   `json:"driver"` // "postgres" or "mysql"
-	Tables   []string `json:"tables"`
-	Columns  []string `json:"columns"`
-	Limit    int      `json:"limit"`
-	Offset   int      `json:"offset"`
-	Query    string   `json:"query"`
+	Username string              `json:"username"`
+	Password string              `json:"password"`
+	Host     string              `json:"host"`
+	Port     int                 `json:"port"`
+	Database string              `json:"database"`
+	Driver   string              `json:"driver"` // "postgres" or "mysql"
+	Tables   map[string][]string `json:"tables"` // Table -> columns (empty means all columns)
+	Limit    int                 `json:"limit"`
+	Offset   int                 `json:"offset"`
+	Query    string              `json:"query"`
 }
 
 func main() {
@@ -66,10 +65,13 @@ func handleFetchTableData(c *gin.Context) {
 	defer db.Close()
 
 	result := make(map[string][]map[string]interface{})
-	for _, table := range payload.Tables {
-		rows, err := fetchTableData(db, table, payload.Limit, payload.Offset, payload.Driver, payload.Columns)
+	for table, columns := range payload.Tables {
+		rows, err := fetchTableData(db, table, payload.Limit, payload.Offset, payload.Driver, columns)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "table": table})
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+				"table": table,
+			})
 			return
 		}
 		result[table] = rows
@@ -78,7 +80,6 @@ func handleFetchTableData(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": result})
 }
 func fetchTableData(db *sql.DB, table string, limit, offset int, driver string, columns []string) ([]map[string]interface{}, error) {
-	// Validate table name to prevent SQL injection
 	if !isValidIdentifier(table) {
 		return nil, fmt.Errorf("invalid table name")
 	}
@@ -113,7 +114,6 @@ func fetchTableData(db *sql.DB, table string, limit, offset int, driver string, 
 	}
 
 	var results []map[string]interface{}
-
 	for rows.Next() {
 		values := make([]interface{}, len(colTypes))
 		for i := range values {
