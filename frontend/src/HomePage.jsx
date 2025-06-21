@@ -191,7 +191,7 @@ function HomePage() {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div style={{ padding: "20px" , width :"20vw"}}>
       <h1 style={{ textAlign: "center" }}>Multi-DB Schema Viewer</h1>
       <DatabaseSelector onAddDatabase={addConnection} />
 
