@@ -2,9 +2,8 @@ import React, { useState } from "react";
 import DatabaseSelector from "./components/DatabaseSelector";
 import CredentialsModal from "./components/CredentialsModal";
 import SchemaView from "./components/SchemaView";
-import CustomQueryBox from "./components/CustomQueryBox"; // ✅ Import one-file SQL query UI
-import Visualise from './components/Visualise/visualise';
-
+import CustomQueryBox from "./components/CustomQueryBox";
+import Visualise from "./components/Visualise/visualise";
 
 function HomePage() {
   const [connections, setConnections] = useState([]);
@@ -14,54 +13,39 @@ function HomePage() {
   const [loadingConnections, setLoadingConnections] = useState({});
   const [credentials, setCredentials] = useState({});
 
-  const handleAddConnection = (driver) => {
-    if (connections.find((c) => c.driver === driver)) return;
-    setConnections((prev) => [...prev, { driver }]);
+  const addConnection = (driver) => {
+    const count = connections.filter((c) => c.driver === driver).length+1;
+    const key = `${driver}_${count}`;
+    setConnections((prev) => [...prev, { driver, key }]);
   };
 
-  const handleRemoveConnection = (driver) => {
-    setConnections((prev) => prev.filter((c) => c.driver !== driver));
-    setSchemas((prev) => {
-      const updated = { ...prev };
-      delete updated[driver];
-      return updated;
-    });
-    setSelectedTables((prev) => {
-      const updated = { ...prev };
-      delete updated[driver];
-      return updated;
-    });
-    setTableData((prev) => {
-      const updated = { ...prev };
-      delete updated[driver];
-      return updated;
-    });
-    setCredentials((prev) => {
-      const updated = { ...prev };
-      delete updated[driver];
-      return updated;
-    });
+  const removeConnection = (key) => {
+    setConnections((prev) => prev.filter((c) => c.key !== key));
+    setSchemas((prev) => removeKey(prev, key));
+    setSelectedTables((prev) => removeKey(prev, key));
+    setTableData((prev) => removeKey(prev, key));
+    setCredentials((prev) => removeKey(prev, key));
+    setLoadingConnections((prev) => removeKey(prev, key));
   };
 
-  const handleCredentialChange = (driver, newCreds) => {
-    setCredentials((prev) => ({ ...prev, [driver]: newCreds }));
+  const removeKey = (obj, key) => {
+    const updated = { ...obj };
+    delete updated[key];
+    return updated;
   };
 
-  const handleCredentialSubmit = async (driver) => {
-    const creds = credentials[driver];
+  const updateCredentials = (key, newCreds) => {
+    setCredentials((prev) => ({ ...prev, [key]: newCreds }));
+  };
+
+  const submitCredentials = async (key, driver) => {
+    const creds = credentials[key];
     if (!creds) return;
 
-    setLoadingConnections((prev) => ({ ...prev, [driver]: true }));
+    setLoadingConnections((prev) => ({ ...prev, [key]: true }));
 
     try {
-      const payload = {
-        username: creds.username,
-        password: creds.password,
-        host: creds.host,
-        port: Number(creds.port),
-        database: creds.database,
-        driver,
-      };
+      const payload = { ...creds, port: Number(creds.port), driver };
       const res = await fetch("http://localhost:8080/db-schema", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -69,40 +53,33 @@ function HomePage() {
       });
       if (res.ok) {
         const data = await res.json();
-        setSchemas((prev) => ({ ...prev, [driver]: { schema: data.schema, creds: payload } }));
+        setSchemas((prev) => ({ ...prev, [key]: { schema: data.schema, creds: payload } }));
       } else {
         console.error("API Error");
       }
     } catch (err) {
       console.error(err);
     } finally {
-      setLoadingConnections((prev) => ({ ...prev, [driver]: false }));
+      setLoadingConnections((prev) => ({ ...prev, [key]: false }));
     }
   };
 
-  const handleSelectTable = (driver, table, isChecked) => {
+  const toggleTableSelection = (key, table, isChecked) => {
     setSelectedTables((prev) => {
       const updated = { ...prev };
-      if (!updated[driver]) updated[driver] = [];
-      updated[driver] = isChecked
-        ? [...updated[driver], table]
-        : updated[driver].filter((t) => t !== table);
+      const current = updated[key] || [];
+      updated[key] = isChecked ? [...current, table] : current.filter((t) => t !== table);
       return updated;
     });
   };
 
-  const handleLoadData = async () => {
-    for (const driver in schemas) {
-      const selected = selectedTables[driver];
+  const loadData = async () => {
+    for (const key in schemas) {
+      const selected = selectedTables[key];
       if (!selected || selected.length === 0) continue;
 
-      const creds = schemas[driver].creds;
-      const payload = {
-        ...creds,
-        tables: selected,
-        page: 1,
-        limit: 50,
-      };
+      const creds = schemas[key].creds;
+      const payload = { ...creds, tables: selected, page: 1, limit: 50 };
 
       try {
         const res = await fetch("http://localhost:8080/table-data", {
@@ -112,7 +89,7 @@ function HomePage() {
         });
         if (res.ok) {
           const data = await res.json();
-          setTableData((prev) => ({ ...prev, [driver]: data }));
+          setTableData((prev) => ({ ...prev, [key]: data }));
         } else {
           console.error("API Error while loading table data");
         }
@@ -124,17 +101,20 @@ function HomePage() {
 
   return (
     <div style={{ padding: "20px" }}>
-      <h1>Multi-DB Schema Viewer</h1>
-      <DatabaseSelector onAddDatabase={handleAddConnection} />
+      <h1 style={{ textAlign: "center" }}>Multi-DB Schema Viewer</h1>
+      <DatabaseSelector onAddDatabase={addConnection} />
 
-      <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
-        {connections.map(({ driver }) => (
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "20px" }}>
+        {connections.map(({ driver, key }) => (
           <div
-            key={driver}
+            key={key}
             style={{ border: "1px solid black", padding: "10px", minWidth: "300px", position: "relative" }}
           >
+            <div style={{ textAlign: "center", fontWeight: "bold", fontSize: "18px", marginBottom: "10px" }}>
+              {key.toUpperCase()}
+            </div>
             <button
-              onClick={() => handleRemoveConnection(driver)}
+              onClick={() => removeConnection(key)}
               style={{ position: "absolute", top: "5px", right: "5px" }}
             >
               ❌
@@ -142,78 +122,74 @@ function HomePage() {
 
             <CredentialsModal
               driver={driver}
-              credentials={credentials[driver] || {}}
-              onChange={(creds) => handleCredentialChange(driver, creds)}
+              credentials={credentials[key] || {}}
+              onChange={(creds) => updateCredentials(key, creds)}
             />
 
             <button
-              onClick={() => handleCredentialSubmit(driver)}
+              onClick={() => submitCredentials(key, driver)}
               style={{ marginTop: "5px", marginBottom: "10px" }}
             >
-              {loadingConnections[driver] ? "Connecting..." : "✔ Connect"}
+              {loadingConnections[key] ? "Connecting..." : "✔ Connect"}
             </button>
 
-
-
-            {schemas[driver] && (
+            {schemas[key] && (
               <>
-                {/* ✅ SQL Query Section for this driver */}
-                <CustomQueryBox creds={schemas[driver].creds} />
+                <CustomQueryBox creds={schemas[key].creds} />
                 <SchemaView
                   driver={driver}
-                  schema={schemas[driver].schema}
-                  onSelectTable={(table, isChecked) => handleSelectTable(driver, table, isChecked)}
+                  schema={schemas[key].schema}
+                  onSelectTable={(table, isChecked) => toggleTableSelection(key, table, isChecked)}
                 />
-                {/* Graphs */}
                 <div className="schema-section">
                   <h2>Graphs</h2>
                   <div className="scrollable-list">
                     <Visualise />
                   </div>
                 </div>
-                      
               </>
             )}
           </div>
         ))}
       </div>
 
-      {Object.keys(schemas).length > 0 && (
-        <button style={{ marginTop: "20px" }} onClick={handleLoadData}>
+      {connections.length > 0 && (
+        <button style={{ marginTop: "20px" }} onClick={loadData}>
           Load Selected Table Data
         </button>
       )}
 
-      {/* ✅ Normal Table Data */}
-      {Object.entries(tableData).map(([driver, data]) => (
-        <div key={driver} style={{ marginTop: "20px" }}>
-          <h2>{driver.toUpperCase()} Table Data</h2>
+      {Object.entries(tableData).map(([key, data]) => (
+        <div key={key} style={{ marginTop: "20px" }}>
+          <h2>{key.toUpperCase()} Table Data</h2>
           {data?.data && Object.keys(data.data).length > 0 ? (
             Object.entries(data.data).map(([tableName, rows]) => (
               <div key={tableName} style={{ marginBottom: "20px" }}>
                 <h3>{tableName}</h3>
-                <table border="1" cellPadding="10" style={{ borderCollapse: "collapse", width: "100%" }}>
-                  <thead>
-                    <tr>
-                      {Object.keys(rows[0] || {}).map((col) => (
-                        <th key={col}>{col}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((row, i) => (
-                      <tr key={i}>
-                        {Object.keys(row).map((col) => (
-                          <td key={col}>{row[col]}</td>
+                <div style={{ overflowX: "auto" }}>
+                  <table border="1" cellPadding="10" style={{ borderCollapse: "collapse", width: "100%" }}>
+                    <thead>
+                      <tr>
+                        {Object.keys(rows[0] || {}).map((col) => (
+                          <th key={col}>{col}</th>
                         ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {rows.map((row, i) => (
+                        <tr key={i}>
+                          {Object.entries(row).map(([col, val]) => (
+                            <td key={col}>{val}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             ))
           ) : (
-            <p>No data available for {driver}.</p>
+            <p>No data available for {key}.</p>
           )}
         </div>
       ))}
