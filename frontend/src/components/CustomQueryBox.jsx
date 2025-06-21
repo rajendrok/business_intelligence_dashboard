@@ -38,6 +38,45 @@ function CustomQueryBox({ creds }) {
     }
   };
 
+  // Function to render the query result table
+  function renderQueryResult() {
+    if (error) {
+      return <p style={{ color: "red" }}>{error}</p>;
+    }
+
+    if (result && Array.isArray(result) && result.length > 0) {
+      return (
+        <div style={{ marginTop: "30px" }}>
+          <h3>Query Result</h3>
+          <table border="1" cellPadding="8" style={{ borderCollapse: "collapse", width: "100%" }}>
+            <thead>
+              <tr>
+                {Object.keys(result[0]).map((col) => (
+                  <th key={col}>{col}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {result.map((row, i) => (
+                <tr key={i}>
+                  {Object.keys(row).map((col) => (
+                    <td key={col}>{String(row[col])}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
+    if (result && Array.isArray(result) && result.length === 0) {
+      return <p style={{ marginTop: "30px" }}>No data available.</p>;
+    }
+
+    return null;
+  }
+
   return (
     <div style={{ marginTop: "20px" }}>
       <h2>Run Custom SQL Query</h2>
@@ -66,35 +105,7 @@ function CustomQueryBox({ creds }) {
       {/* Add space after the button */}
       <div style={{ height: "24px" }} />
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      {result && Array.isArray(result) && result.length > 0 && (
-        <div style={{ marginTop: "30px" }}>
-          <h3>Query Result</h3>
-          <table border="1" cellPadding="8" style={{ borderCollapse: "collapse", width: "100%" }}>
-            <thead>
-              <tr>
-                {Object.keys(result[0]).map((col) => (
-                  <th key={col}>{col}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {result.map((row, i) => (
-                <tr key={i}>
-                  {Object.keys(row).map((col) => (
-                    <td key={col}>{String(row[col])}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {result && Array.isArray(result) && result.length === 0 && (
-        <p style={{ marginTop: "30px" }}>No data available.</p>
-      )}
+      {renderQueryResult()}
 
       {/* Space for new object/graph below */}
       <div style={{ marginTop: "40px" }} />

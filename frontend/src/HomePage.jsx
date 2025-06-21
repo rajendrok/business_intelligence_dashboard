@@ -99,6 +99,44 @@ function HomePage() {
     }
   };
 
+  // Helper function to render table data
+  const renderTableData = () => {
+    return Object.entries(tableData).map(([key, data]) => (
+      <div key={key} style={{ marginTop: "20px" }}>
+        <h2>{key.toUpperCase()} Table Data</h2>
+        {data?.data && Object.keys(data.data).length > 0 ? (
+          Object.entries(data.data).map(([tableName, rows]) => (
+            <div key={tableName} style={{ marginBottom: "20px" }}>
+              <h3>{tableName}</h3>
+              <div style={{ overflowX: "auto" }}>
+                <table border="1" cellPadding="10" style={{ borderCollapse: "collapse", width: "100%" }}>
+                  <thead>
+                    <tr>
+                      {Object.keys(rows[0] || {}).map((col) => (
+                        <th key={col}>{col}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((row, i) => (
+                      <tr key={i}>
+                        {Object.entries(row).map(([col, val]) => (
+                          <td key={col}>{val}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))
+        ) : (
+          <p>No data available for {key}.</p>
+        )}
+      </div>
+    ));
+  };
+
   return (
     <div style={{ padding: "20px" }}>
       <h1 style={{ textAlign: "center" }}>Multi-DB Schema Viewer</h1>
@@ -159,40 +197,7 @@ function HomePage() {
         </button>
       )}
 
-      {Object.entries(tableData).map(([key, data]) => (
-        <div key={key} style={{ marginTop: "20px" }}>
-          <h2>{key.toUpperCase()} Table Data</h2>
-          {data?.data && Object.keys(data.data).length > 0 ? (
-            Object.entries(data.data).map(([tableName, rows]) => (
-              <div key={tableName} style={{ marginBottom: "20px" }}>
-                <h3>{tableName}</h3>
-                <div style={{ overflowX: "auto" }}>
-                  <table border="1" cellPadding="10" style={{ borderCollapse: "collapse", width: "100%" }}>
-                    <thead>
-                      <tr>
-                        {Object.keys(rows[0] || {}).map((col) => (
-                          <th key={col}>{col}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.map((row, i) => (
-                        <tr key={i}>
-                          {Object.entries(row).map(([col, val]) => (
-                            <td key={col}>{val}</td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ))
-          ) : (
-            <p>No data available for {key}.</p>
-          )}
-        </div>
-      ))}
+      {renderTableData()}
     </div>
   );
 }
