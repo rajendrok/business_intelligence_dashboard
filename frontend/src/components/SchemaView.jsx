@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import './SchemaView.css';
 import Visualise from './Visualise/visualise';
 
-function SchemaView({ schema, onSelectTable }) {
+function SchemaView({ driver, schema, onSelectTable, onSubmitQuery }) {
   const [selectedTables, setSelectedTables] = useState({});
   const [selectedColumns, setSelectedColumns] = useState({});
+  const [customQuery, setCustomQuery] = useState('');
 
   const handleSelectTable = (table, isChecked) => {
     setSelectedTables((prev) => ({ ...prev, [table]: isChecked }));
@@ -20,11 +21,19 @@ function SchemaView({ schema, onSelectTable }) {
     });
   };
 
+  const handleRunQuery = () => {
+    if (customQuery.trim() === '') {
+      alert("Please enter a query.");
+      return;
+    }
+    onSubmitQuery(driver, customQuery);
+  };
+
   if (!schema) return null;
 
   return (
     <div className="schema-column-wrapper">
-      {/* Tables section */}
+      {/* Tables */}
       <div className="schema-section">
         <h2>Tables</h2>
         <div className="scrollable-list">
@@ -41,7 +50,7 @@ function SchemaView({ schema, onSelectTable }) {
         </div>
       </div>
 
-      {/* Views section */}
+      {/* Views */}
       <div className="schema-section">
         <h2>Views</h2>
         <div className="scrollable-list">
@@ -58,12 +67,24 @@ function SchemaView({ schema, onSelectTable }) {
         </div>
       </div>
 
-      {/* Graphs section */}
+      {/* Graphs */}
       <div className="schema-section">
         <h2>Graphs</h2>
         <div className="scrollable-list">
           <Visualise />
         </div>
+      </div>
+
+      {/* ✅ SQL Query Section */}
+      <div className="schema-section">
+        <h2>SQL Query</h2>
+        <textarea
+          placeholder="Write your SQL query here..."
+          value={customQuery}
+          onChange={(e) => setCustomQuery(e.target.value)}
+          style={{ width: "100%", height: "100px", marginBottom: "10px" }}
+        />
+        <button onClick={handleRunQuery}>Submit Query</button>
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import DatabaseSelector from "./components/DatabaseSelector";
 import CredentialsModal from "./components/CredentialsModal";
 import SchemaView from "./components/SchemaView";
+import CustomQueryBox from "./components/CustomQueryBox"; // ✅ Import one-file SQL query UI
 
 function HomePage() {
   const [connections, setConnections] = useState([]);
@@ -157,6 +158,9 @@ function HomePage() {
                   schema={schemas[driver].schema}
                   onSelectTable={(table, isChecked) => handleSelectTable(driver, table, isChecked)}
                 />
+
+                {/* ✅ SQL Query Section for this driver */}
+                <CustomQueryBox creds={schemas[driver].creds} />
               </>
             )}
           </div>
@@ -169,14 +173,15 @@ function HomePage() {
         </button>
       )}
 
+      {/* ✅ Normal Table Data */}
       {Object.entries(tableData).map(([driver, data]) => (
-        <div key={driver}>
+        <div key={driver} style={{ marginTop: "20px" }}>
           <h2>{driver.toUpperCase()} Table Data</h2>
           {data?.data && Object.keys(data.data).length > 0 ? (
             Object.entries(data.data).map(([tableName, rows]) => (
-              <div key={tableName}>
+              <div key={tableName} style={{ marginBottom: "20px" }}>
                 <h3>{tableName}</h3>
-                <table border="1" cellPadding="10">
+                <table border="1" cellPadding="10" style={{ borderCollapse: "collapse", width: "100%" }}>
                   <thead>
                     <tr>
                       {Object.keys(rows[0] || {}).map((col) => (
