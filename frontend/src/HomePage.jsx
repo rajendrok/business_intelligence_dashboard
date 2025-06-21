@@ -3,157 +3,204 @@ import DatabaseSelector from "./components/DatabaseSelector";
 import CredentialsModal from "./components/CredentialsModal";
 import SchemaView from "./components/SchemaView";
 
-// var username = "root";
-// var password = "Kush@789#";
-// var host = "dev.wikibedtimestories.com";
-// var database = "WBS";
-// var driver = "mysql";
-// var port = 31347;
-
 function HomePage() {
-  const [selectedDb, setSelectedDb] = useState('');
-  const [isOpen, setIsOpen] = useState(false);
-  const [schema, setSchema] = useState(null);
-  const [selectedTables, setSelectedTables] = useState([]);
-  const [credentials, setCredentials] = useState(null);
-  const [tableData, setTableData] = useState([]);
-  const [queryData, setQueryData] = useState(null);
+  const [connections, setConnections] = useState([]);
+  const [schemas, setSchemas] = useState({});
+  const [selectedTables, setSelectedTables] = useState({});
+  const [tableData, setTableData] = useState({});
+  const [loadingConnections, setLoadingConnections] = useState({});
+  const [credentials, setCredentials] = useState({});
 
-  const handleSelect = (db) => {
-    setSelectedDb(db);
-    if (db) setIsOpen(true);
+  const handleAddConnection = (driver) => {
+    if (connections.find((c) => c.driver === driver)) return;
+    setConnections((prev) => [...prev, { driver }]);
   };
 
-  const handleSubmit = async (creds) => {
-    setIsOpen(false);
-    setCredentials(creds);
+  const handleRemoveConnection = (driver) => {
+    setConnections((prev) => prev.filter((c) => c.driver !== driver));
+    setSchemas((prev) => {
+      const updated = { ...prev };
+      delete updated[driver];
+      return updated;
+    });
+    setSelectedTables((prev) => {
+      const updated = { ...prev };
+      delete updated[driver];
+      return updated;
+    });
+    setTableData((prev) => {
+      const updated = { ...prev };
+      delete updated[driver];
+      return updated;
+    });
+    setCredentials((prev) => {
+      const updated = { ...prev };
+      delete updated[driver];
+      return updated;
+    });
+  };
+
+  const handleCredentialChange = (driver, newCreds) => {
+    setCredentials((prev) => ({ ...prev, [driver]: newCreds }));
+  };
+
+  const handleCredentialSubmit = async (driver) => {
+    const creds = credentials[driver];
+    if (!creds) return;
+
+    setLoadingConnections((prev) => ({ ...prev, [driver]: true }));
+
     try {
       const payload = {
-        // username,
-        // password,
-        // host,
-        // port,
-        // database,
-        // driver,
-        username: creds.username, 
+        username: creds.username,
         password: creds.password,
         host: creds.host,
         port: Number(creds.port),
         database: creds.database,
-        driver: selectedDb
+        driver,
       };
       const res = await fetch("http://localhost:8080/db-schema", {
-        method: 'POST',
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       if (res.ok) {
         const data = await res.json();
-        setSchema(data.schema);
+        setSchemas((prev) => ({ ...prev, [driver]: { schema: data.schema, creds: payload } }));
       } else {
-        console.error('API Error');
+        console.error("API Error");
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoadingConnections((prev) => ({ ...prev, [driver]: false }));
     }
   };
 
-  const handleSelectTable = (table, isChecked) => {
-    setSelectedTables((prev) =>
-      isChecked ? [...prev, table] : prev.filter((t) => t !== table)
-    );
-    setTableData([]);  // ✅ CLEAR previous data when table selection changes
+  const handleSelectTable = (driver, table, isChecked) => {
+    setSelectedTables((prev) => {
+      const updated = { ...prev };
+      if (!updated[driver]) updated[driver] = [];
+      updated[driver] = isChecked
+        ? [...updated[driver], table]
+        : updated[driver].filter((t) => t !== table);
+      return updated;
+    });
   };
 
-  const handleLoadData = async (page = 1, limit = 50) => {
-    if (!credentials || selectedTables.length === 0) return;
+  const handleLoadData = async () => {
+    for (const driver in schemas) {
+      const selected = selectedTables[driver];
+      if (!selected || selected.length === 0) continue;
 
-    setTableData([]); // ✅ Clear before fetching new data
-
-    try {
+      const creds = schemas[driver].creds;
       const payload = {
-        // username,
-        // password,
-        // host,
-        // port,
-        // database,
-        // driver,
-        // tables: selectedTables,
-        // page,
-        // limit,
-        username: credentials.username, 
-        password: credentials.password,
-        host: credentials.host,
-        port: Number(credentials.port),
-        database: credentials.database,
-        driver: selectedDb,
-        tables: selectedTables,
-        page,
-        limit,
+        ...creds,
+        tables: selected,
+        page: 1,
+        limit: 50,
       };
-      const res = await fetch("http://localhost:8080/table-data", {
-        method: 'POST',
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setTableData(data);
-      } else {
-        console.error('API Error while loading table data');
+
+      try {
+        const res = await fetch("http://localhost:8080/table-data", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setTableData((prev) => ({ ...prev, [driver]: data }));
+        } else {
+          console.error("API Error while loading table data");
+        }
+      } catch (err) {
+        console.error(err);
       }
-    } catch (err) {
-      console.error(err);
     }
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>Database Schema Viewer</h1>
-      <DatabaseSelector onSelect={handleSelect} />
-      <CredentialsModal isOpen={isOpen} onSubmit={handleSubmit} onClose={() => setIsOpen(false)} />
+    <div style={{ padding: "20px" }}>
+      <h1>Multi-DB Schema Viewer</h1>
+      <DatabaseSelector onAddDatabase={handleAddConnection} />
 
-      {schema && (
-        <>
-          <SchemaView schema={schema} onSelectTable={handleSelectTable} />
-          <br />
-          <button onClick={() => handleLoadData(1, 50)}>Load Selected Table Data</button>
-        </>
+      <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+        {connections.map(({ driver }) => (
+          <div
+            key={driver}
+            style={{ border: "1px solid black", padding: "10px", minWidth: "300px", position: "relative" }}
+          >
+            <button
+              onClick={() => handleRemoveConnection(driver)}
+              style={{ position: "absolute", top: "5px", right: "5px" }}
+            >
+              ❌
+            </button>
+
+            <CredentialsModal
+              driver={driver}
+              credentials={credentials[driver] || {}}
+              onChange={(creds) => handleCredentialChange(driver, creds)}
+            />
+
+            <button
+              onClick={() => handleCredentialSubmit(driver)}
+              style={{ marginTop: "5px", marginBottom: "10px" }}
+            >
+              {loadingConnections[driver] ? "Connecting..." : "✔ Connect"}
+            </button>
+
+            {schemas[driver] && (
+              <>
+                <SchemaView
+                  driver={driver}
+                  schema={schemas[driver].schema}
+                  onSelectTable={(table, isChecked) => handleSelectTable(driver, table, isChecked)}
+                />
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {Object.keys(schemas).length > 0 && (
+        <button style={{ marginTop: "20px" }} onClick={handleLoadData}>
+          Load Selected Table Data
+        </button>
       )}
 
-      {tableData?.data && Object.keys(tableData.data).length > 0 && (
-        <div>
-          <h2>Table Data</h2>
-          {Object.entries(tableData.data).map(([tableName, rows]) => (
-            <div key={tableName}>
-              <h3>{tableName}</h3>
-              {Array.isArray(rows) && rows.length > 0 ? (
+      {Object.entries(tableData).map(([driver, data]) => (
+        <div key={driver}>
+          <h2>{driver.toUpperCase()} Table Data</h2>
+          {data?.data && Object.keys(data.data).length > 0 ? (
+            Object.entries(data.data).map(([tableName, rows]) => (
+              <div key={tableName}>
+                <h3>{tableName}</h3>
                 <table border="1" cellPadding="10">
                   <thead>
                     <tr>
-                      {Object.keys(rows[0] || {}).map((column) => (
-                        <th key={column}>{column}</th>
+                      {Object.keys(rows[0] || {}).map((col) => (
+                        <th key={col}>{col}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {rows?.map((row, i) => (
+                    {rows.map((row, i) => (
                       <tr key={i}>
-                        {Object.keys(row).map((column) => (
-                          <td key={column}>{row[column]}</td>
+                        {Object.keys(row).map((col) => (
+                          <td key={col}>{row[col]}</td>
                         ))}
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              ) : (
-                <p>No data available</p>
-              )}
-            </div>
-          ))}
-          <br />
+              </div>
+            ))
+          ) : (
+            <p>No data available for {driver}.</p>
+          )}
         </div>
-      )}
+      ))}
     </div>
   );
 }

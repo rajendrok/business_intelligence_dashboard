@@ -1,32 +1,44 @@
-// src/components/CredentialsModal.js
-import React, { useState } from "react";
+import React from "react";
 
-function CredentialsModal({ isOpen, onSubmit, onClose }) {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
-    const [host, setHost] = useState('');
-    const [port, setPort] = useState('');
-    const [database, setDatabase] = useState('');
+function CredentialsModal({ driver, credentials, onChange }) {
+  const handleChange = (field, value) => {
+    onChange({
+      ...credentials,
+      [field]: value,
+    });
+  };
 
-    if (!isOpen) return null;
-
-    return (
-        <div style={{ border: '1px solid black', padding: '20px', background: 'lightgrey' }}>
-            <h2>Enter Database Credentials</h2>
-            <input placeholder="Username" onChange={(e) => setUsername(e.target.value)} /><br />
-            <input placeholder="Password" type="password" onChange={(e) => setPassword(e.target.value)} /><br />
-            <input placeholder="Host" onChange={(e) => setHost(e.target.value)} /><br />
-            <input placeholder="Port" type="number" onChange={(e) => setPort(e.target.value)} /><br />
-            <input placeholder="Database" onChange={(e) => setDatabase(e.target.value)} /><br />
-            <br />
-            <button onClick={() => onSubmit({ username, password, host, port, database })}>
-                Submit
-            </button>
-            <button onClick={onClose}>
-                Cancel
-            </button>
-        </div>
-    )
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+      <input
+        placeholder="Username"
+        value={credentials?.username || ""}
+        onChange={(e) => handleChange("username", e.target.value)}
+      />
+      <input
+        placeholder="Password"
+        type="password"
+        value={credentials?.password || ""}
+        onChange={(e) => handleChange("password", e.target.value)}
+      />
+      <input
+        placeholder="Host"
+        value={credentials?.host || ""}
+        onChange={(e) => handleChange("host", e.target.value)}
+      />
+      <input
+        placeholder="Port"
+        type="number"
+        value={credentials?.port || ""}
+        onChange={(e) => handleChange("port", e.target.value)}
+      />
+      <input
+        placeholder="Database Name"
+        value={credentials?.database || ""}
+        onChange={(e) => handleChange("database", e.target.value)}
+      />
+    </div>
+  );
 }
 
 export default CredentialsModal;

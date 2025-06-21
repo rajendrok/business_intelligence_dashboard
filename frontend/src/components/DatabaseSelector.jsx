@@ -1,18 +1,16 @@
-// src/components/DatabaseSelector.js
 import React from "react";
 
-function DatabaseSelector({ onSelect }) {
-    return (
-        <div>
-            <label>Choose Database:</label>
-            <select onChange={(e) => onSelect(e.target.value)}>
-                <option value="">Select</option>
-                <option value="mysql">MySQL</option>
-                <option value="postgres">Postgres</option>
-                <option value="oracle">Oracle</option>
-            </select>
-        </div>
-    )
+function DatabaseSelector({ onAddDatabase }) {
+  return (
+    <div>
+      <label>Choose Database:</label>
+      <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+        <button onClick={() => onAddDatabase("mysql")}>➕ MySQL</button>
+        <button onClick={() => onAddDatabase("postgres")}>➕ Postgres</button>
+        <button onClick={() => onAddDatabase("oracle")}>➕ Oracle</button>
+      </div>
+    </div>
+  );
 }
 
 export default DatabaseSelector;

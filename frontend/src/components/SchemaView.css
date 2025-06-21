@@ -1,82 +1,45 @@
-.schema-container {
-  padding: 20px;
-  width: 90vw;
-}
-
-.schema-main {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 20px;
-}
-
-.schema-tables {
-  width: 20vw;
-  max-height: 90vh;         /* ✅ Set fixed height for scrolling */
-  overflow-y: auto;         /* ✅ Scrollable vertically */
-  overflow-x: hidden;
-  border: 1px solid #ccc;   /* ✅ Optional: visual boundary */
-  border-radius: 4px;
-  background-color: #f9f9f9;
-  padding-top: -1px;
-
-}
-
-.schema-query {
+.schema-column-wrapper {
   display: flex;
   flex-direction: column;
-  width: 50vw;
-  margin-left: 10vw;
-}
-
-.query-textarea {
-  width: 100%;
-  height: 200px;
-  resize: vertical;
-  margin-bottom: 10px;
-  padding: 10px;
-
-  font-size: 16px;
-}
-
-.query-submit-button {
-  padding: 8px 16px;
-  font-size: 16px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  cursor: pointer;
-  border-radius: 4px;
-  margin-bottom: 10px;
-}
-
-.query-submit-button:hover {
-  background-color: #0056b3;
-}
-
-#graph_list {
-  margin-top: 20vh;
-  height: 60vh;
-  width: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  background-color: #f5f5f5;
-  border: 2px solid #ccc;
-  padding: 10px;
-}
-
-/* ✅ Make Views scrollable and matching Tables style */
-.schema-views {
-  margin-top: -16vh;
-  width: 20%;
-  max-height: 70vh;         /* ✅ Same height as schema-tables */
+  height: 90vh;                  /* Full height for each DB column */
+  width: 20vw;                   /* You can adjust width as needed */
   overflow-y: auto;
   overflow-x: hidden;
   border: 1px solid #ccc;
   border-radius: 4px;
   background-color: #f9f9f9;
-  padding: -1px;
+  gap: 15px;
+  padding: 10px;
 }
 
+/* Reusable section styling for Tables, Views, Graphs */
+.schema-section {
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  background-color: #fff;
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+}
+
+.schema-section h2 {
+  margin: 0 0 5px 0;
+  padding: 8px;
+  background-color: #eee;
+  border-bottom: 1px solid #ccc;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+/* Scrollable list inside each section */
+.scrollable-list {
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: 30vh;              /* Controls scrolling area height of tables/views */
+}
+
+/* Accordion (Table list UI) styling */
 .accordion {
   border: 1px solid #ccc;
   margin: 5px 0;
@@ -95,26 +58,24 @@
   margin-bottom: 4px;
 }
 
-#views_heading,
-#tables_heading{
-   height: 10vh;
-  background-color: #eee;
-  border-bottom: 1px solid #ccc;
-  position: sticky;       /* ✅ Makes it stay at the top while scrolling */
-  top: 0;
-  z-index: 1;
+/* Optional: Scrollable Graphs area inside its section */
+.graph-scrollable {
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: 30vh;              /* Control scroll size for graphs */
 }
 
+/* Query result table styles (if used later) */
 .query-result-table table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 20px;
+  margin-top: 10px;
 }
 
 .query-result-table th,
 .query-result-table td {
   border: 1px solid #ccc;
-  padding: 8px;
+  padding: 6px;
   text-align: left;
 }
 
@@ -124,5 +85,5 @@
 
 .query-error {
   color: red;
-  margin-top: 10px;
+  margin-top: 8px;
 }
