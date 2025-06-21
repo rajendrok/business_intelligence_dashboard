@@ -67,13 +67,7 @@ function SchemaView({ driver, schema, onSelectTable, onSubmitQuery }) {
         </div>
       </div>
 
-      {/* Graphs */}
-      <div className="schema-section">
-        <h2>Graphs</h2>
-        <div className="scrollable-list">
-          <Visualise />
-        </div>
-      </div>
+
     </div>
   );
 }

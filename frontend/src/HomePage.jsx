@@ -3,6 +3,8 @@ import DatabaseSelector from "./components/DatabaseSelector";
 import CredentialsModal from "./components/CredentialsModal";
 import SchemaView from "./components/SchemaView";
 import CustomQueryBox from "./components/CustomQueryBox"; // ✅ Import one-file SQL query UI
+import Visualise from './components/Visualise/visualise';
+
 
 function HomePage() {
   const [connections, setConnections] = useState([]);
@@ -162,6 +164,13 @@ function HomePage() {
                   schema={schemas[driver].schema}
                   onSelectTable={(table, isChecked) => handleSelectTable(driver, table, isChecked)}
                 />
+                {/* Graphs */}
+                <div className="schema-section">
+                  <h2>Graphs</h2>
+                  <div className="scrollable-list">
+                    <Visualise />
+                  </div>
+                </div>
                       
               </>
             )}

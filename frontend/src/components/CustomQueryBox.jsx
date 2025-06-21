@@ -41,22 +41,35 @@ function CustomQueryBox({ creds }) {
   return (
     <div style={{ marginTop: "20px" }}>
       <h2>Run Custom SQL Query</h2>
-      <textarea
-        rows="4"
-        style={{ width: "100%", marginBottom: "10px" }}
-        value={sqlQuery}
-        onChange={(e) => setSqlQuery(e.target.value)}
-        placeholder="Write your SELECT query here..."
-      />
+      <div style={{ position: "relative", width: "100%" }}>
+        <textarea
+          rows="4"
+          style={{ width: "100%", marginBottom: "10px", resize: "vertical" }}
+          value={sqlQuery}
+          onChange={(e) => setSqlQuery(e.target.value)}
+          placeholder="Write your SELECT query here..."
+        />
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            style={{
+              marginTop: "-10px",
+              whiteSpace: "nowrap"
+            }}
+          >
+            {loading ? "Running..." : "Submit Query"}
+          </button>
+        </div>
+      </div>
 
-      <button onClick={handleSubmit} disabled={loading}>
-        {loading ? "Running..." : "Submit Query"}
-      </button>
+      {/* Add space after the button */}
+      <div style={{ height: "24px" }} />
 
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       {result && Array.isArray(result) && result.length > 0 && (
-        <div style={{ marginTop: "15px" }}>
+        <div style={{ marginTop: "30px" }}>
           <h3>Query Result</h3>
           <table border="1" cellPadding="8" style={{ borderCollapse: "collapse", width: "100%" }}>
             <thead>
@@ -80,8 +93,11 @@ function CustomQueryBox({ creds }) {
       )}
 
       {result && Array.isArray(result) && result.length === 0 && (
-        <p style={{ marginTop: "10px" }}>No data available.</p>
+        <p style={{ marginTop: "30px" }}>No data available.</p>
       )}
+
+      {/* Space for new object/graph below */}
+      <div style={{ marginTop: "40px" }} />
     </div>
   );
 }
