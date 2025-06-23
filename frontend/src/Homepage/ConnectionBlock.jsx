@@ -27,6 +27,7 @@ export default function ConnectionBlock({
             onToggleColumn={onToggleColumn}
             onToggleTable={onToggleTable}
           />
+          <h2 style={{ marginBottom: "10px" }}>Select a Chart to Visualize</h2>
           <Visualise onSelectChart={onSelectChart} />
         </>
       )}

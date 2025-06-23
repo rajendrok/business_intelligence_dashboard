@@ -157,6 +157,7 @@ function getChart(type, size = 160) {
 
 const Visualise = ({ onSelectChart }) => {
   const charts = [];
+
   for (let i = 0; i < 20; i++) {
     charts.push(
       <div
@@ -166,14 +167,17 @@ const Visualise = ({ onSelectChart }) => {
           border: "1px solid #ccc",
           borderRadius: "8px",
           padding: "8px",
-          width: "calc(50% - 12px)", // ✅ Two per row with spacing
+          width: "100%", // full width for one per row
           boxSizing: "border-box",
           backgroundColor: "#f9f9f9",
+          marginBottom: "8px", // spacing between charts
         }}
-        onClick={() => onSelectChart(getChart(i % 12, 500))} // ✅ 500px graph on select
+        onClick={() => onSelectChart(getChart(i % 12, 500))}
       >
         {getChart(i % 12, 180)}
-        <div style={{ fontSize: "12px", marginTop: "5px", textAlign: "center" }}>Chart {i + 1}</div>
+        <div style={{ fontSize: "12px", marginTop: "5px", textAlign: "center" }}>
+          Chart {i + 1}
+        </div>
       </div>
     );
   }
@@ -182,11 +186,11 @@ const Visualise = ({ onSelectChart }) => {
     <div
       style={{
         display: "flex",
-        flexWrap: "wrap",
-        gap: "12px",
-        maxHeight: "320px",
-        overflowY: "auto",
-        padding: "5px",
+        flexDirection: "column", // ✅ vertical layout
+        maxHeight: "200px",
+        // overflowY: "auto",
+        overflowX: "hidden",
+        padding: "2px",
       }}
     >
       {charts}
