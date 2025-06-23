@@ -41,12 +41,12 @@ function CustomQueryBox({ creds, onResult }) {
       <h2>Run Custom SQL Query</h2>
       <textarea
         rows="4"
-        style={{ width: "100%", marginBottom: "10px", resize: "vertical" }}
+        style={{ width: "100%", resize: "vertical" }}
         value={sqlQuery}
         onChange={(e) => setSqlQuery(e.target.value)}
         placeholder="Write your SELECT query here..."
       />
-      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+      <div style={{ display: "flex", justifyContent: "center" }}>
         <button
           onClick={handleSubmit}
           disabled={loading}
@@ -54,8 +54,9 @@ function CustomQueryBox({ creds, onResult }) {
         >
           {loading ? "Running..." : "Submit Query"}
         </button>
+       
       </div>
-
+        <br/> 
       {/* Error display */}
       {error && <p style={{ color: "red", marginTop: "10px" }}>{error}</p>}
     </div>

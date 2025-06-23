@@ -5,7 +5,8 @@ function SchemaView({ schema, selectedTables, onToggleColumn, onToggleTable }) {
   if (!schema) return null;
 
   return (
-    <div className="schema-column-wrapper">
+    // <div className="schema-column-wrapper">
+      <>
       {/* Tables Section */}
       <div className="schema-section">
         <h2>Tables</h2>
@@ -22,7 +23,7 @@ function SchemaView({ schema, selectedTables, onToggleColumn, onToggleTable }) {
           ))}
         </div>
       </div>
-
+    <br/>
       {/* Views Section */}
       <div className="schema-section">
         <h2>Views</h2>
@@ -39,7 +40,8 @@ function SchemaView({ schema, selectedTables, onToggleColumn, onToggleTable }) {
           ))}
         </div>
       </div>
-    </div>
+      </>
+  
   );
 }
 
