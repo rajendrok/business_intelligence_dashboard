@@ -31,18 +31,31 @@ export default function useConnections() {
   const submitCredentials = async (key, driver) => {
     const creds = credentials[key];
     if (!creds) return;
+
+    const normalizedCreds = {
+      ...creds,
+      port: Number(creds.port),
+      driver,
+    };
+
     setLoadingConnections((prev) => ({ ...prev, [key]: true }));
 
     try {
       const res = await fetch("http://localhost:8080/db-schema", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...creds, port: Number(creds.port), driver }),
+        body: JSON.stringify(normalizedCreds), // ✅ send normalized creds
       });
 
       if (res.ok) {
         const data = await res.json();
-        setSchemas((prev) => ({ ...prev, [key]: { schema: data.schema, creds } }));
+        setSchemas((prev) => ({
+          ...prev,
+          [key]: {
+            schema: data.schema,
+            creds: normalizedCreds, // ✅ store normalized creds directly
+          },
+        }));
       }
     } catch (err) {
       console.error(err);
@@ -50,7 +63,7 @@ export default function useConnections() {
       setLoadingConnections((prev) => ({ ...prev, [key]: false }));
     }
   };
-
+  
   const toggleTableSelection = (dbKey, table, isChecked) => {
     setSelectedTables((prev) => {
       const updated = { ...prev };

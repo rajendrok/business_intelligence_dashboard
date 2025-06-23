@@ -1,6 +1,6 @@
 import React from "react";
 
-function CredentialsModal({ driver, credentials, onChange }) {
+function CredentialsModal({ credentials, onChange }) {
   const handleChange = (field, value) => {
     onChange({
       ...credentials,

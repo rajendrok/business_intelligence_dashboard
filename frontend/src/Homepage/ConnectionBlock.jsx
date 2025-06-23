@@ -13,7 +13,7 @@ export default function ConnectionBlock({
       <div style={{ textAlign: "center", fontWeight: "bold", fontSize: "18px", marginBottom: "10px" }}>{dbKey.toUpperCase()}</div>
       <button onClick={onRemove} style={{ position: "absolute", top: "5px", right: "5px" }}>❌</button>
 
-      <CredentialsModal driver={driver} credentials={credentials} onChange={onUpdateCreds} />
+      <CredentialsModal credentials={credentials} onChange={onUpdateCreds} />
       <button onClick={onSubmitCreds} style={{ marginTop: "5px", marginBottom: "10px" }}>
         {loading ? "Connecting..." : "✔ Connect"}
       </button>
