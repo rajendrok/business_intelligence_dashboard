@@ -1,32 +1,34 @@
+
 import React from "react";
+import "./DatabaseSelector.css"; // CSS file for styling
+
+
+const databases = [
+  { name: "MySQL", driver: "mysql", icon: "/icons/Mysql.png" },
+  { name: "PostgreSQL", driver: "postgres", icon: "icons/postgresql.png" },
+  { name: "MongoDB", driver: "mongodb", icon: "/icons/mongodb.png" },
+  { name: "SQLite", driver: "sqlite", icon: "/icons/sqlite.png" },
+  { name: "Oracle", driver: "oracle", icon: "/icons/oracle.png" },
+  { name: "SQL Server", driver: "sqlserver", icon: "/icons/sqlserver.png" },
+];
+
+
+
+
 
 function DatabaseSelector({ onAddDatabase }) {
   return (
-    <div>
-      <label>Choose Database:</label>
-
-      <div
-        style={{
-          maxWidth: "100%",            // allow full width of parent
-          overflowX: "auto",           // enable horizontal scroll
-          whiteSpace: "nowrap",        // keep buttons in one line
-          border: "1px solid #ccc",
-          padding: "10px",
-          marginTop: "10px",
-        }}
-      >
-        <button onClick={() => onAddDatabase("mysql")} style={{ marginRight: "8px" }}>➕ MySQL</button>
-        <button onClick={() => onAddDatabase("postgres")} style={{ marginRight: "8px" }}>➕ Postgres</button>
-        <button onClick={() => onAddDatabase("oracle")} style={{ marginRight: "8px" }}>➕ Oracle</button>
-        <button onClick={() => onAddDatabase("sqlserver")} style={{ marginRight: "8px" }}>➕ SQL Server</button>
-        <button onClick={() => onAddDatabase("sqlite")} style={{ marginRight: "8px" }}>➕ SQLite</button>
-        <button onClick={() => onAddDatabase("mongodb")} style={{ marginRight: "8px" }}>➕ MongoDB</button>
-        <button onClick={() => onAddDatabase("cassandra")} style={{ marginRight: "8px" }}>➕ Cassandra</button>
-        <button onClick={() => onAddDatabase("neo4j")} style={{ marginRight: "8px" }}>➕ Neo4j</button>
-        <button onClick={() => onAddDatabase("clickhouse")} style={{ marginRight: "8px" }}>➕ ClickHouse</button>
-        <button onClick={() => onAddDatabase("druid")} style={{ marginRight: "8px" }}>➕ Druid</button>
-        <button onClick={() => onAddDatabase("firebase")} style={{ marginRight: "8px" }}>➕ Firebase</button>
-      </div>
+    <div className="grid-container">
+      {databases.map((db) => (
+        <div
+          className="card"
+          key={db.driver}
+          onClick={() => onAddDatabase(db.driver)}
+        >
+          <img src={db.icon} alt={db.name} className="icon" />
+          
+        </div>
+      ))}
     </div>
   );
 }

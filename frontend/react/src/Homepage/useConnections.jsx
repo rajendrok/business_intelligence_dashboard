@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 
 export default function useConnections() {
@@ -95,7 +96,7 @@ export default function useConnections() {
         const res = await fetch("http://localhost:8080/table-data", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...schemas[key].creds, tables: tablesWithColumns, limit: 1000, offset: 0 }),
+          body: JSON.stringify({ ...schemas[key].creds, tables: tablesWithColumns, limit: 10, offset: 0 }),
         });
 
         if (res.ok) {
