@@ -4,56 +4,68 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"main/config"
 	"net/http"
 	"time"
 )
 
-var druidEndpoint = config.DRUID_URL + "/sql/task" // Change to your actual Druid endpoint
-
 func IngestData(table string, data []map[string]interface{}) {
+	fmt.Println("Starting Ingest data")
+
+	// Ensure __time column exists
+	for _, row := range data {
+		if _, ok := row["__time"]; !ok {
+			row["__time"] = time.Now().UTC().Format(time.RFC3339)
+		}
+	}
+
 	payload := map[string]interface{}{
 		"type": "index",
 		"spec": map[string]interface{}{
-			"type": "index",
-			"spec": map[string]interface{}{
-				"dataSchema": map[string]interface{}{
-					"dataSource": table,
-					"parser": map[string]interface{}{
-						"type": "string",
-						"parseSpec": map[string]interface{}{
-							"format":         "json",
-							"timestampSpec":  map[string]string{"column": "__time", "format": "auto"},
-							"dimensionsSpec": map[string]interface{}{},
-						},
-					},
-					"metricsSpec": []interface{}{},
-					"granularitySpec": map[string]string{
-						"type":               "uniform",
-						"segmentGranularity": "day",
-						"queryGranularity":   "none",
+			"dataSchema": map[string]interface{}{
+				"dataSource": table,
+				"timestampSpec": map[string]interface{}{
+					"column": "___time", // Make sure this column exists!
+					"format": "iso",     // or "auto"
+				},
+				"dimensionsSpec": map[string]interface{}{
+					"dimensions": []string{}, // Druid can auto-detect if empty
+				},
+				"metricsSpec": []interface{}{},
+				"granularitySpec": map[string]interface{}{
+					"type":               "uniform",
+					"segmentGranularity": "day",
+					"queryGranularity":   "none",
+				},
+			},
+			"ioConfig": map[string]interface{}{
+				"type": "index",
+				"inputSource": map[string]interface{}{
+					"type": "inline",
+					"data": marshalRows(data),
+				},
+				"inputFormat": map[string]interface{}{
+					"type": "json",
+					"flattenSpec": map[string]interface{}{
+						"useFieldDiscovery": true,
 					},
 				},
-				"ioConfig": map[string]interface{}{
-					"type": "index",
-					"inputSource": map[string]interface{}{
-						"type": "inline",
-						"data": marshalRows(data),
-					},
-					"inputFormat": map[string]string{"type": "json"},
-				},
-				"tuningConfig": map[string]string{"type": "index"},
+			},
+			"tuningConfig": map[string]interface{}{
+				"type": "index",
 			},
 		},
 	}
 
 	b, _ := json.Marshal(payload)
-	req, err := http.NewRequest("POST", druidEndpoint, bytes.NewBuffer(b))
+	req, err := http.NewRequest("POST", config.DRUID_URL+"/task", bytes.NewBuffer(b))
 	if err != nil {
 		fmt.Println("druid ingest request error:", err)
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
+
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -61,7 +73,9 @@ func IngestData(table string, data []map[string]interface{}) {
 		return
 	}
 	defer resp.Body.Close()
-	fmt.Println("Druid ingest response:", resp.Status)
+
+	bodyBytes, _ := io.ReadAll(resp.Body)
+	fmt.Println("Druid ingest response body:", string(bodyBytes))
 }
 
 func marshalRows(rows []map[string]interface{}) string {
