@@ -200,12 +200,13 @@ func handleDBSchema(c *gin.Context) {
 
 func openDB(payload DBPayload) (*sql.DB, error) {
 	var dsn string
-	if payload.Driver == "postgres" {
+	switch payload.Driver {
+	case "postgres":
 		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable",
 			payload.Host, payload.Username, payload.Password, payload.Database, payload.Port)
-	} else if payload.Driver == "mysql" {
+	case "mysql":
 		dsn = fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", payload.Username, payload.Password, payload.Host, payload.Port, payload.Database)
-	} else {
+	default:
 		return nil, fmt.Errorf("unsupported driver")
 	}
 
@@ -258,13 +259,14 @@ func getColumnNames(db *sql.DB, table, driver string) ([]string, error) {
 	var rows *sql.Rows
 	var err error
 
-	if driver == "postgres" {
+	switch driver {
+	case "postgres":
 		query = `SELECT column_name FROM information_schema.columns WHERE table_name=$1`
 		rows, err = db.Query(query, table)
-	} else if driver == "mysql" {
+	case "mysql":
 		query = `SHOW COLUMNS FROM ` + table
 		rows, err = db.Query(query)
-	} else {
+	default:
 		return nil, fmt.Errorf("unsupported driver")
 	}
 
