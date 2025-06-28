@@ -24,11 +24,27 @@ func HandleFetchTableData(c *gin.Context) {
 	}
 	defer dbConn.Close()
 
-	result, err := db.FetchTables(dbConn, payload)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+	result := make(map[string][]map[string]interface{})
+	for table, cols := range payload.Tables {
+		// Try fetching from Druid first
+		druidData, err := druid.QueryTable(table)
+		if err == nil && len(druidData) > 0 {
+			result[table] = druidData
+			continue
+		}
+
+		// Fallback to DB fetch
+		dbData, err := db.FetchTableData(dbConn, table, payload.Limit, payload.Offset, payload.Driver, cols)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		result[table] = dbData
+
+		// Upload to Druid in background
+		go druid.IngestData(table, dbData)
 	}
+
 	c.JSON(http.StatusOK, gin.H{"data": result})
 }
 
@@ -66,6 +82,12 @@ func HandleCustomQuery(c *gin.Context) {
 		return
 	}
 
+	// Try from Druid first
+	if druidData, err := druid.QueryRawSQL(payload.Query); err == nil && len(druidData) > 0 {
+		c.JSON(http.StatusOK, gin.H{"data": druidData})
+		return
+	}
+
 	dbConn, err := db.OpenDB(payload)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -78,6 +100,10 @@ func HandleCustomQuery(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Async ingest into Druid
+	go druid.IngestData("custom_query", result)
+
 	c.JSON(http.StatusOK, gin.H{"data": result})
 }
 
@@ -87,6 +113,8 @@ func HandleFileUpload(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	druid.IngestData(fileData)
+	if fileData != nil {
+		druid.IngestData("uploaded_file", fileData.([]map[string]interface{}))
+	}
 	c.JSON(http.StatusOK, gin.H{"message": "file uploaded and ingested"})
 }
