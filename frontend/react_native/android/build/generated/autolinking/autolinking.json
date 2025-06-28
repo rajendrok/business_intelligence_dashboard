@@ -1,20 +1,20 @@
 {
-  "root": "D:\\MyNewApp",
-  "reactNativePath": "D:\\MyNewApp\\node_modules\\react-native",
+  "root": "C:\\business_intelligence_dashboard\\frontend\\react_native",
+  "reactNativePath": "C:\\business_intelligence_dashboard\\frontend\\react_native\\node_modules\\react-native",
   "reactNativeVersion": "0.80",
   "dependencies": {
     "react-native-safe-area-context": {
-      "root": "D:\\MyNewApp\\node_modules\\react-native-safe-area-context",
+      "root": "C:\\business_intelligence_dashboard\\frontend\\react_native\\node_modules\\react-native-safe-area-context",
       "name": "react-native-safe-area-context",
       "platforms": {
         "ios": {
-          "podspecPath": "D:\\MyNewApp\\node_modules\\react-native-safe-area-context\\react-native-safe-area-context.podspec",
+          "podspecPath": "C:\\business_intelligence_dashboard\\frontend\\react_native\\node_modules\\react-native-safe-area-context\\react-native-safe-area-context.podspec",
           "version": "5.5.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "D:\\MyNewApp\\node_modules\\react-native-safe-area-context\\android",
+          "sourceDir": "C:\\business_intelligence_dashboard\\frontend\\react_native\\node_modules\\react-native-safe-area-context\\android",
           "packageImportPath": "import com.th3rdwave.safeareacontext.SafeAreaContextPackage;",
           "packageInstance": "new SafeAreaContextPackage()",
           "buildTypes": [],
@@ -23,7 +23,7 @@
             "RNCSafeAreaProviderComponentDescriptor",
             "RNCSafeAreaViewComponentDescriptor"
           ],
-          "cmakeListsPath": "D:/MyNewApp/node_modules/react-native-safe-area-context/android/src/main/jni/CMakeLists.txt",
+          "cmakeListsPath": "C:/business_intelligence_dashboard/frontend/react_native/node_modules/react-native-safe-area-context/android/src/main/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -32,17 +32,17 @@
       }
     },
     "react-native-screens": {
-      "root": "D:\\MyNewApp\\node_modules\\react-native-screens",
+      "root": "C:\\business_intelligence_dashboard\\frontend\\react_native\\node_modules\\react-native-screens",
       "name": "react-native-screens",
       "platforms": {
         "ios": {
-          "podspecPath": "D:\\MyNewApp\\node_modules\\react-native-screens\\RNScreens.podspec",
+          "podspecPath": "C:\\business_intelligence_dashboard\\frontend\\react_native\\node_modules\\react-native-screens\\RNScreens.podspec",
           "version": "4.11.1",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "D:\\MyNewApp\\node_modules\\react-native-screens\\android",
+          "sourceDir": "C:\\business_intelligence_dashboard\\frontend\\react_native\\node_modules\\react-native-screens\\android",
           "packageImportPath": "import com.swmansion.rnscreens.RNScreensPackage;",
           "packageInstance": "new RNScreensPackage()",
           "buildTypes": [],
@@ -60,7 +60,7 @@
             "RNSScreenContentWrapperComponentDescriptor",
             "RNSModalScreenComponentDescriptor"
           ],
-          "cmakeListsPath": "D:/MyNewApp/node_modules/react-native-screens/android/src/main/jni/CMakeLists.txt",
+          "cmakeListsPath": "C:/business_intelligence_dashboard/frontend/react_native/node_modules/react-native-screens/android/src/main/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -231,7 +231,7 @@
         {
           "name": "--path <path>",
           "description": "Path to the React Native project root.",
-          "default": "D:\\MyNewApp"
+          "default": "C:\\business_intelligence_dashboard\\frontend\\react_native"
         },
         {
           "name": "--platform <string>",
@@ -531,7 +531,7 @@
   "assets": [],
   "project": {
     "ios": {
-      "sourceDir": "D:\\MyNewApp\\ios",
+      "sourceDir": "C:\\business_intelligence_dashboard\\frontend\\react_native\\ios",
       "xcodeProject": {
         "name": "MyNewApp.xcodeproj",
         "path": ".",
@@ -540,7 +540,7 @@
       "assets": []
     },
     "android": {
-      "sourceDir": "D:\\MyNewApp\\android",
+      "sourceDir": "C:\\business_intelligence_dashboard\\frontend\\react_native\\android",
       "appName": "app",
       "packageName": "com.mynewapp",
       "applicationId": "com.mynewapp",
