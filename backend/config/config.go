@@ -1,5 +1,5 @@
 package config
 
 var (
-	DRUID_URL = "http://localhost:8888/druid/v2"
+	DRUID_URL = "https://druid.dev.wikibedtimestories.com/druid/v2"
 )
