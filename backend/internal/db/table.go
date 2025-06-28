@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"main/models"
 )
 
 type SchemaResult struct {
@@ -10,10 +11,9 @@ type SchemaResult struct {
 	Views  map[string][]string `json:"views"`
 }
 
-func FetchSchema(db *sql.DB, payload interface{}) (*SchemaResult, error) {
-	driver := payload.(map[string]interface{})["driver"].(string)
-	database := payload.(map[string]interface{})["database"].(string)
-
+func FetchSchema(db *sql.DB, payload models.DBPayload) (*SchemaResult, error) {
+	driver := payload.Driver
+	database := payload.Database
 	tableNames, err := getTableNames(db, driver, database)
 	if err != nil {
 		return nil, err

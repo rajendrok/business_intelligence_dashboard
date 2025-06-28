@@ -61,7 +61,6 @@ func HandleDBSchema(c *gin.Context) {
 		return
 	}
 	defer dbConn.Close()
-
 	schema, err := db.FetchSchema(dbConn, payload)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
