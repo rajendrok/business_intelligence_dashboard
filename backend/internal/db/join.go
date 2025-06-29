@@ -80,17 +80,16 @@ func CrossJoin(left, right []map[string]interface{}) []map[string]interface{} {
 }
 
 func mergeMaps(left, right map[string]interface{}) map[string]interface{} {
-	merged := map[string]interface{}{}
-	if left != nil {
-		for k, v := range left {
-			merged["left_"+k] = v
-		}
+	merged := make(map[string]interface{})
+
+	for k, v := range left {
+		merged["left_"+k] = v
 	}
-	if right != nil {
-		for k, v := range right {
-			merged["right_"+k] = v
-		}
+
+	for k, v := range right {
+		merged["right_"+k] = v
 	}
+
 	return merged
 }
 
