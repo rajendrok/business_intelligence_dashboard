@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"main/internal/db"
 	"main/internal/druid"
 	"main/internal/file"
@@ -28,21 +29,23 @@ func HandleFetchTableData(c *gin.Context) {
 	for table, cols := range payload.Tables {
 		// Try fetching from Druid first
 		druidData, err := druid.QueryTable(table)
+		fmt.Println("druidData", druidData)
 		if err == nil && len(druidData) > 0 {
 			result[table] = druidData
 			continue
-		}
+		} else {
 
-		// Fallback to DB fetch
-		dbData, err := db.FetchTableData(dbConn, table, payload.Limit, payload.Offset, payload.Driver, cols)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		result[table] = dbData
+			// Fallback to DB fetch
+			dbData, err := db.FetchTableData(dbConn, table, payload.Limit, payload.Offset, payload.Driver, cols)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			result[table] = dbData
 
-		// Upload to Druid in background
-		go druid.IngestData(table, dbData)
+			// Upload to Druid in background
+			go druid.IngestData(table, dbData)
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": result})
