@@ -1,10 +1,12 @@
 package api
 
 import (
+	"database/sql"
 	"fmt"
 	"main/internal/db"
 	"main/internal/druid"
 	"main/internal/file"
+	"main/internal/redis"
 	"main/models"
 	"net/http"
 
@@ -119,4 +121,79 @@ func HandleFileUpload(c *gin.Context) {
 		druid.IngestData("uploaded_file", fileData.([]map[string]interface{}))
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "file uploaded and ingested"})
+}
+
+func JoinHandler(c *gin.Context) {
+	var req models.JoinRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	dataMap := make(map[string][]map[string]interface{})
+	dbCache := make(map[string]*sql.DB)
+
+	for _, src := range req.Sources {
+		switch src.Type {
+		case "database":
+			key := fmt.Sprintf("%s:%d:%s:%s", src.Credentials.Host, src.Credentials.Port, src.Credentials.Username, src.Credentials.Database)
+			if _, exists := dbCache[key]; !exists {
+				database, err := db.OpenDB(src.Credentials)
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+					return
+				}
+				dbCache[key] = database
+			}
+			database := dbCache[key]
+			rows, err := database.Query(fmt.Sprintf("SELECT * FROM %s", src.Table))
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			data, err := db.ScanRows(rows)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			dataMap[src.SourceID] = data
+		case "excel":
+			data, err := redis.GetExcelFromRedis(src.FileID)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			dataMap[src.SourceID] = data
+		}
+	}
+	if _, ok := dataMap[req.Joins[0].Left]; !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "missing initial join source: " + req.Joins[0].Left})
+		return
+	}
+	result := []map[string]interface{}{}
+
+	for i, join := range req.Joins {
+		leftData, leftOk := dataMap[join.Left]
+		if i > 0 && join.Left == req.Joins[i-1].Left {
+			leftData = result // use previous join result if same left
+		} else if !leftOk {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "missing left join source: " + join.Left})
+			return
+		}
+
+		rightData, rightOk := dataMap[join.Right]
+		if !rightOk {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "missing right join source: " + join.Right})
+			return
+		}
+
+		joined, err := db.DispatchJoin(join.Type, leftData, rightData, join.LeftColumn, join.RightColumn)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		result = joined
+	}
+
+	c.JSON(http.StatusOK, result)
 }
