@@ -1,0 +1,68 @@
+import { StyleSheet } from 'react-native';
+
+const styles = StyleSheet.create({
+  schemaWrapper: {
+    flexDirection: 'column',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 4,
+    backgroundColor: '#f9f9f9',
+    padding: 10,
+    gap: 15,
+  },
+  schemaSection: {
+    borderWidth: 1,
+    borderColor: '#aaa',
+    borderRadius: 4,
+    backgroundColor: '#fff',
+    padding: 5,
+  },
+  schemaSectionHeading: {
+    padding: 8,
+    backgroundColor: '#eee',
+    borderBottomWidth: 1,
+    borderColor: '#ccc',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  scrollableList: {
+    maxHeight: '30%',
+  },
+  accordion: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 4,
+    marginVertical: 5,
+    padding: 8,
+    backgroundColor: '#fff',
+  },
+  accordionListItem: {
+    paddingLeft: 10,
+    marginBottom: 4,
+  },
+  graphScrollable: {
+    maxHeight: '30%',
+  },
+  errorText: {
+    color: 'red',
+    marginTop: 8,
+  },
+  fixedTableContainer: {
+    maxHeight: 300,
+    minHeight: 300,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 6,
+    backgroundColor: '#fff',
+    marginTop: 10,
+  },
+  tableCell: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 6,
+  },
+  tableHeader: {
+    backgroundColor: '#f9f9f9',
+    fontWeight: 'bold',
+  },
+});
