@@ -14,6 +14,7 @@ func HandleRoute() {
 	r.POST("/table-data", api.HandleFetchTableData)
 	r.POST("/custom-query", api.HandleCustomQuery)
 	r.POST("/upload", api.HandleFileUpload) // future file upload
+	r.POST("/multi-join", api.JoinHandler)
 
 	r.Run(":8080")
 }

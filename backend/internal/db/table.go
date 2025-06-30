@@ -117,3 +117,38 @@ func getColumnNames(db *sql.DB, table, driver string) ([]string, error) {
 	}
 	return cols, nil
 }
+
+func ScanRows(rows *sql.Rows) ([]map[string]interface{}, error) {
+	defer rows.Close()
+
+	cols, err := rows.Columns()
+	if err != nil {
+		return nil, err
+	}
+
+	result := []map[string]interface{}{}
+	for rows.Next() {
+		colsData := make([]interface{}, len(cols))
+		colsPtrs := make([]interface{}, len(cols))
+		for i := range colsData {
+			colsPtrs[i] = &colsData[i]
+		}
+
+		if err := rows.Scan(colsPtrs...); err != nil {
+			return nil, err
+		}
+
+		rowMap := make(map[string]interface{})
+		for i, col := range cols {
+			val := colsData[i]
+			if b, ok := val.([]byte); ok {
+				val = string(b)
+			}
+			rowMap[col] = val
+		}
+
+		result = append(result, rowMap)
+	}
+
+	return result, nil
+}

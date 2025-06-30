@@ -26,30 +26,30 @@ func IngestData(table string, data []map[string]interface{}) {
 			"dataSchema": map[string]interface{}{
 				"dataSource": table,
 				"timestampSpec": map[string]interface{}{
-					"column": "___time", // Make sure this column exists!
-					"format": "iso",     // or "auto"
+					"column": "__time",
+					"format": "iso",
 				},
 				"dimensionsSpec": map[string]interface{}{
-					"dimensions": []string{}, // Druid can auto-detect if empty
+					"useSchemaDiscovery": true,
 				},
-				"metricsSpec": []interface{}{},
 				"granularitySpec": map[string]interface{}{
 					"type":               "uniform",
 					"segmentGranularity": "day",
 					"queryGranularity":   "none",
 				},
+				"metricsSpec": []interface{}{},
 			},
 			"ioConfig": map[string]interface{}{
 				"type": "index",
 				"inputSource": map[string]interface{}{
 					"type": "inline",
-					"data": marshalRows(data),
+					"data": marshalRows(data), // This is your \n-separated NDJSON
 				},
 				"inputFormat": map[string]interface{}{
-					"type": "json",
-					"flattenSpec": map[string]interface{}{
-						"useFieldDiscovery": true,
-					},
+					"type":                   "json",
+					"assumeNewlineDelimited": true,
+					// "useJsonNodeReader":      true,
+					"keepNullColumns": false,
 				},
 			},
 			"tuningConfig": map[string]interface{}{
@@ -59,7 +59,7 @@ func IngestData(table string, data []map[string]interface{}) {
 	}
 
 	b, _ := json.Marshal(payload)
-	req, err := http.NewRequest("POST", config.DRUID_URL+"/task", bytes.NewBuffer(b))
+	req, err := http.NewRequest("POST", config.DRUID_IngestEndpoint+"/task", bytes.NewBuffer(b))
 	if err != nil {
 		fmt.Println("druid ingest request error:", err)
 		return
@@ -90,13 +90,16 @@ func marshalRows(rows []map[string]interface{}) string {
 
 func QueryTable(table string) ([]map[string]interface{}, error) {
 	query := fmt.Sprintf("SELECT * FROM %s LIMIT 1000", table)
+	fmt.Println(query)
+	// query := `SELECT DISTINCT datasource FROM sys.segments WHERE is_published = 1 AND is_available = 1`
+	// fmt.Println("Druid SHOW TABLES query:", query)
 	return QueryRawSQL(query)
 }
 
 func QueryRawSQL(query string) ([]map[string]interface{}, error) {
 	body := map[string]string{"query": query}
 	b, _ := json.Marshal(body)
-	req, err := http.NewRequest("POST", config.DRUID_URL+"/sql", bytes.NewBuffer(b))
+	req, err := http.NewRequest("POST", config.DRUID_SQLQueryEndpoint, bytes.NewBuffer(b))
 	if err != nil {
 		return nil, err
 	}
