@@ -13,11 +13,11 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import DatabaseSelector from '../components/DataBaseSelector.jsx';
-import useConnections from './UseConnection';
-import { getColorForKey } from './ColorUtils';
-import ConnectionBlock from './ConnectionBlock';
-import TableOutput from './TableOutput';
-import GraphOutput from './GraphOutput';
+import useConnections from './UseConnection.jsx';
+import { getColorForKey } from './ColorUtils.jsx';
+import ConnectionBlock from './ConnectionBlock.jsx';
+import TableOutput from './TableOutput.jsx';
+import GraphOutput from './GraphOutput.jsx';
 import Sidebar from './Sidebar';
 import styles from './HomePageStyles';
 
