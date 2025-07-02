@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { Platform } from 'react-native';
+
+const BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://localhost:8080';
 
 export default function useConnections() {
   const [connections, setConnections] = useState([]);
@@ -37,7 +40,7 @@ export default function useConnections() {
     setLoadingConnections(prev => ({ ...prev, [key]: true }));
 
     try {
-      const res = await fetch('http://10.0.2.2:8080/db-schema', {
+      const res = await fetch(`${BASE_URL}/db-schema`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(normalized),
@@ -84,7 +87,7 @@ export default function useConnections() {
       if (!tablesWithCols || !Object.keys(tablesWithCols).length) continue;
 
       try {
-        const res = await fetch('http://10.0.2.2:8080/table-data', {
+        const res = await fetch(`${BASE_URL}/table-data`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

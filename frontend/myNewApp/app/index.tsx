@@ -1,10 +1,14 @@
+import React from 'react';
 import { View } from 'react-native';
+import { ConnectionProvider } from '../Homepage/ConnectionContext';
 import HomePage from '../Homepage/HomePage';
 
-export default function Home() {
+export default function App() {
   return (
-    <View style={{ flex: 1 , marginTop : 40}}>
-      <HomePage />
-    </View>
+    <ConnectionProvider>
+      <View style={{ flex: 1, marginTop :60 }}>
+        <HomePage />
+      </View>
+    </ConnectionProvider>
   );
 }

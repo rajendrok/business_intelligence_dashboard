@@ -31,6 +31,9 @@ export default function ConnectionBlock({
 }) {
   const [showBlock, setShowBlock] = useState(false);
 
+  // ✅ Debug schema content
+  console.log("ConnectionBlock →", dbKey, schema);
+
   return (
     <View style={styles.outerWrapper}>
       <View style={styles.container}>
@@ -62,7 +65,8 @@ export default function ConnectionBlock({
               )}
             </View>
 
-            {schema && (
+            {/* ✅ Check for nested schema object */}
+            {schema?.schema ? (
               <ScrollView style={styles.scrollSection}>
                 <CustomQueryBox creds={schema.creds} onResult={onCustomQuery} />
                 <SchemaView
@@ -74,7 +78,9 @@ export default function ConnectionBlock({
                 <Text style={styles.chartHeader}>📊 Select a Chart to Visualize</Text>
                 <Visualise onSelectChart={onSelectChart} />
               </ScrollView>
-            )}
+            ) : schema && !schema.schema ? (
+              <Text style={{ marginTop: 10, color: 'gray' }}>✅ Connected! No schema received.</Text>
+            ) : null}
           </View>
         )}
       </View>

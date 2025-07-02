@@ -1,4 +1,3 @@
-
 import { Feather as Icon } from "@expo/vector-icons";
 import React, { useRef, useState } from "react";
 import {
@@ -12,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
 import DatabaseSelector from "../components/DataBaseSelector.jsx";
 import FileUploader from "../components/FileUploader.jsx";
 import { getColorForKey } from "./ColorUtils.jsx";
@@ -20,7 +20,8 @@ import GraphOutput from "./GraphOutput.jsx";
 import styles from "./HomePageStyles";
 import Sidebar from "./Sidebar";
 import TableOutput from "./TableOutput.jsx";
-import useConnections from "./UseConnection.jsx";
+import { useConnectionContext } from "./ConnectionContext";
+import JoinPage from "./JoinPage";
 
 export default function HomePage() {
   const {
@@ -41,15 +42,17 @@ export default function HomePage() {
     selectedGraphs,
     setSelectedGraphs,
     loadingConnections,
-  } = useConnections();
+  } = useConnectionContext();
 
   const [showPopup, setShowPopup] = useState(false);
   const [selectedOperation, setSelectedOperation] = useState("");
   const [dropdownStates, setDropdownStates] = useState({});
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activePage, setActivePage] = useState("DataSources"); // new state for active page
+  const [activePage, setActivePage] = useState("DataSources");
 
   const slideAnim = useRef(new Animated.Value(-220)).current;
+  const screenWidth = Dimensions.get("window").width;
+  const isSmallScreen = screenWidth < 500;
 
   const toggleSidebar = () => {
     Animated.timing(slideAnim, {
@@ -64,9 +67,6 @@ export default function HomePage() {
     setActivePage(page);
     toggleSidebar();
   };
-
-  const screenWidth = Dimensions.get("window").width;
-  const isSmallScreen = screenWidth < 500;
 
   const toggleDropdown = (key) => {
     setDropdownStates((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -103,7 +103,7 @@ export default function HomePage() {
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Overlay when sidebar is open */}
+      {/* Overlay */}
       {isSidebarOpen && (
         <TouchableOpacity
           style={{
@@ -133,10 +133,10 @@ export default function HomePage() {
           zIndex: 10,
         }}
       >
-        <Sidebar onSelectPage={setActivePage} activePage={activePage} />
+        <Sidebar onSelectPage={handleSelectPage} activePage={activePage} />
       </Animated.View>
 
-      {/* Toggle button (hide when sidebar is open) */}
+      {/* Toggle Button */}
       {!isSidebarOpen && (
         <TouchableOpacity
           onPress={toggleSidebar}
@@ -155,11 +155,10 @@ export default function HomePage() {
         </TouchableOpacity>
       )}
 
-      {/* Main content */}
+      {/* Main Content */}
       <ScrollView style={styles.page}>
         <Text style={styles.title}>Multi-DB Schema Viewer</Text>
 
-        {/* Show only if activePage === 'DataSources' */}
         {activePage === "DataSources" && (
           <>
             <DatabaseSelector onAddDatabase={addConnection} />
@@ -249,8 +248,7 @@ export default function HomePage() {
         )}
 
         {activePage === "FileUploads" && <FileUploader />}
-
-        {/* Add other pages here like: activePage === 'Dashboard' && <Dashboard /> etc. */}
+        {activePage === "DataJoins" && <JoinPage />}
       </ScrollView>
 
       {/* Modal */}
