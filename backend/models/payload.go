@@ -30,10 +30,10 @@ type Source struct {
 }
 
 type JoinConfig struct {
-	Left        string `json:"left"`
-	Right       string `json:"right"`
-	LeftColumn  string `json:"left_column"`
-	RightColumn string `json:"right_column"`
+	LeftSource  string `json:"left_source"`
+	RightSource string `json:"right_source"`
+	LeftColumn  string `json:"left_source_column"`
+	RightColumn string `json:"right_source_column"`
 	Type        string `json:"type"`
 }
 

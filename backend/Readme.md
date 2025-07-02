@@ -14,9 +14,7 @@
         "database": "db1",
         "driver": "postgres",
         "limit": 0,
-        "offset": 0,
-        "query": "",
-        "tables": {}
+        "offset": 0
       }
     },
     {
@@ -31,9 +29,7 @@
         "database": "db2",
         "driver": "mysql",
         "limit": 0,
-        "offset": 0,
-        "query": "",
-        "tables": {}
+        "offset": 0
       }
     },
     {
@@ -51,10 +47,10 @@
       "type": "INNER"
     },
     {
-      "left": "db1_users",
-      "right": "excel_loyalty",
-      "left_column": "email",
-      "right_column": "email",
+      "left_source": "db1_users",
+      "right_source": "excel_loyalty",
+      "left_source_column": "email",
+      "right_source_column": "email",
       "type": "LEFT"
     }
   ]
@@ -77,9 +73,7 @@
         "database": "MLD",
         "driver": "mysql",
         "limit": 0,
-        "offset": 0,
-        "query": "",
-        "tables": {}
+        "offset": 0
       }
     },
     {
@@ -94,9 +88,7 @@
         "database": "testdb",
         "driver": "postgres",
         "limit": 0,
-        "offset": 0,
-        "query": "",
-        "tables": {}
+        "offset": 0
       }
     }
     // {
@@ -107,10 +99,10 @@
   ],
   "joins": [
     {
-      "left": "db1_users",
-      "right": "db2_orders",
-      "left_column": "User ID",
-      "right_column": "user_id",
+      "left_source": "db1_users",
+      "right_source": "db2_orders",
+      "left_source_column": "User ID",
+      "right_source_column": "user_id",
       "type": "RIGHT"
     }
     // {

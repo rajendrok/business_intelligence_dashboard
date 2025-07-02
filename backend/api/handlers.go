@@ -165,24 +165,24 @@ func JoinHandler(c *gin.Context) {
 			dataMap[src.SourceID] = data
 		}
 	}
-	if _, ok := dataMap[req.Joins[0].Left]; !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "missing initial join source: " + req.Joins[0].Left})
+	if _, ok := dataMap[req.Joins[0].LeftSource]; !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "missing initial join source: " + req.Joins[0].LeftSource})
 		return
 	}
 	result := []map[string]interface{}{}
 
 	for i, join := range req.Joins {
-		leftData, leftOk := dataMap[join.Left]
-		if i > 0 && join.Left == req.Joins[i-1].Left {
+		leftData, leftOk := dataMap[join.LeftSource]
+		if i > 0 && join.LeftSource == req.Joins[i-1].LeftSource {
 			leftData = result // use previous join result if same left
 		} else if !leftOk {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "missing left join source: " + join.Left})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "missing left join source: " + join.LeftSource})
 			return
 		}
 
-		rightData, rightOk := dataMap[join.Right]
+		rightData, rightOk := dataMap[join.RightSource]
 		if !rightOk {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "missing right join source: " + join.Right})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "missing right join source: " + join.RightSource})
 			return
 		}
 
