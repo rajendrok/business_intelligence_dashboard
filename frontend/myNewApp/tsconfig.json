@@ -1,15 +1,22 @@
 {
-  "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true,
-    "paths": {
-      "@/*": [
-        "./*"
-      ]
-    }
+    "jsx": "react-jsx",
+    "allowJs": true,
+    "checkJs": false,
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "outDir": "dist",                 // <--- keep output separate
+    "noEmit": false                   // allow emitting files (default, just make sure it's not true)
   },
   "include": [
-    "**/*.ts",
-    "**/*.tsx"
+    "Homepage/**/*.ts",
+    "Homepage/**/*.tsx",
+    "Homepage/**/*.jsx"              // if using JSX
+  ],
+  "exclude": [
+    "node_modules",
+    "Homepage/HomePageStyles.js",
+    "Homepage/SidebarStyle.js",
+    "dist"                           // avoid output being recompiled
   ]
 }

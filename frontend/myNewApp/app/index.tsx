@@ -1,4 +1,3 @@
-import React from 'react';
 import { View } from 'react-native';
 import { ConnectionProvider } from '../Homepage/ConnectionContext';
 import HomePage from '../Homepage/HomePage';
