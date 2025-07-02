@@ -129,7 +129,6 @@ func JoinHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
 	dataMap := make(map[string][]map[string]interface{})
 	dbCache := make(map[string]*sql.DB)
 
@@ -195,5 +194,5 @@ func JoinHandler(c *gin.Context) {
 		result = joined
 	}
 
-	c.JSON(http.StatusOK, result)
+	c.JSON(http.StatusOK, gin.H{"data": result, "count": len(result)})
 }

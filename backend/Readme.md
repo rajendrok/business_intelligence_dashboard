@@ -61,3 +61,65 @@
 }
 
 ```
+
+```
+{
+  "sources": [
+    {
+      "source_id": "db1_users",
+      "type": "database",
+      "table": "User_Birth_Place",
+      "credentials": {
+        "username": "root",
+        "password": "Kush@789#",
+        "host": "dev.myluckydays.ai",
+        "port": 31346,
+        "database": "MLD",
+        "driver": "mysql",
+        "limit": 0,
+        "offset": 0,
+        "query": "",
+        "tables": {}
+      }
+    },
+    {
+      "source_id": "db2_orders",
+      "type": "database",
+      "table": "users_profession_details",
+      "credentials": {
+        "username": "postgres",
+        "password": "Kush@789#",
+        "host": "dev.mynetworth.pro",
+        "port": 31348,
+        "database": "testdb",
+        "driver": "postgres",
+        "limit": 0,
+        "offset": 0,
+        "query": "",
+        "tables": {}
+      }
+    }
+    // {
+    //   "source_id": "excel_loyalty",
+    //   "type": "excel",
+    //   "file_id": "loyalty_2024_sheet"
+    // }
+  ],
+  "joins": [
+    {
+      "left": "db1_users",
+      "right": "db2_orders",
+      "left_column": "User ID",
+      "right_column": "user_id",
+      "type": "RIGHT"
+    }
+    // {
+    //   "left": "db1_users",
+    //   "right": "excel_loyalty",
+    //   "left_column": "email",
+    //   "right_column": "email",
+    //   "type": "LEFT"
+    // }
+  ]
+}
+```

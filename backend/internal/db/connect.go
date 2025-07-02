@@ -16,7 +16,7 @@ func OpenDB(payload models.DBPayload) (*sql.DB, error) {
 		dsn = fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
 			payload.Username, payload.Password, payload.Host, payload.Port, payload.Database)
 	default:
-		return nil, fmt.Errorf("unsupported driver")
+		return nil, fmt.Errorf("unsupported driver, uisng drive name %s", payload.Driver)
 	}
 	return sql.Open(payload.Driver, dsn)
 }
