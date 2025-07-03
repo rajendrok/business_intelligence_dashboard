@@ -1,155 +1,159 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Button,
-  Platform,
   ScrollView,
-  StyleSheet,
-  Text,
   View,
+  Text,
+  TextInput,
+  StyleSheet,
+  Button,
 } from "react-native";
+import { Picker } from "@react-native-picker/picker";
 import { useConnectionContext } from "./ConnectionContext";
 
 export default function JoinPage() {
-  const { selectedTables, credentials } = useConnectionContext();
-  const [joinResult, setJoinResult] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const {
+    selectedTables,
+    credentials,
+    tableData,
+  } = useConnectionContext();
 
-  const buildPayload = () => {
-    const sources = [];
-    const joins = [];
-    const selected = [];
+  const [joins, setJoins] = useState([]);
+  const [joinedData, setJoinedData] = useState([]);
+  const [error, setError] = useState(null);
 
-    Object.entries(selectedTables).forEach(([dbKey, tables]) => {
-      Object.entries(tables).forEach(([tableName, isSelected]) => {
-        if (isSelected) {
-          selected.push({ dbKey, tableName });
-        }
-      });
-    });
-
-    selected.forEach(({ dbKey, tableName }) => {
-      const creds = credentials[dbKey];
-      if (!creds || !creds.driver) return; // Only handle DB sources
-
-      const sourceId = `${dbKey}_${tableName}`;
-
-      sources.push({
-        source_id: sourceId,
+  // Dynamically build sources
+  const sources = Object.entries(selectedTables).flatMap(([dbKey, tables]) => {
+    const cred = credentials[dbKey];
+    if (!cred) return [];
+    return Object.keys(tables)
+      .filter((tableName) => tables[tableName])
+      .map((tableName) => ({
+        source_id: `${dbKey}_${tableName}`,
         type: "database",
         table: tableName,
         credentials: {
-          username: creds.username,
-          password: creds.password,
-          host: creds.host,
-          port: Number(creds.port),
-          database: creds.database,
-          driver: creds.driver,
-          limit: 0,
-          offset: 0,
-          query: "",
-          tables: {},
+          host: cred.host,
+          port: parseInt(cred.port || "3306", 10),
+          username: cred.username,
+          password: cred.password,
+          database: cred.database,
+          driver: cred.driver || "mysql", // Default to mysql if undefined
         },
-      });
-    });
+      }));
+  });
 
-    for (let i = 0; i < sources.length - 1; i++) {
-      joins.push({
-        left: sources[i].source_id,
-        right: sources[i + 1].source_id,
-        left_column: "id",
-        right_column: "id",
-        type: "INNER",
-      });
+  useEffect(() => {
+    if (sources.length >= 2) {
+      const newJoins = [];
+      for (let i = 0; i < sources.length - 1; i++) {
+        newJoins.push({
+          left_source: sources[i].source_id,
+          right_source: sources[i + 1].source_id,
+          left_source_column: "",
+          right_source_column: "",
+          type: "INNER",
+        });
+      }
+      setJoins(newJoins);
     }
+  }, [JSON.stringify(sources)]); // prevent infinite loop
 
-    return { sources, joins };
+  const handleJoinChange = (index, key, value) => {
+    const updated = [...joins];
+    updated[index][key] = value;
+    setJoins(updated);
   };
 
-  const callJoinAPI = async () => {
-    const payload = buildPayload();
-
-    if (payload.sources.length < 2) {
-      alert("Select at least two *database* tables to join.");
-      return;
-    }
-
-    setLoading(true);
-    setJoinResult(null);
-
-    const localIP = "192.168.0.100"; // your machine IP
-    const host = Platform.OS === "android" ? "http://10.0.2.2" : `http://${localIP}`;
-
+  const performJoin = async () => {
+    setError(null);
     try {
-      const response = await fetch(`${host}:8080/multi-join`, {
+      const response = await fetch("http://localhost:8080/multi-join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ sources, joins }),
       });
 
+      const result = await response.json();
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Server error: ${response.status} - ${errorText}`);
+        setError(result.error || "Join failed.");
+        return;
       }
 
-      const data = await response.json();
-      setJoinResult(data);
+      setJoinedData(Array.isArray(result.data) ? result.data : []);
     } catch (err) {
-      alert("Failed to fetch join data: " + err.message);
-    } finally {
-      setLoading(false);
+      setError(err.message || "Failed to fetch join data.");
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.header}>Selected Tables</Text>
+    <ScrollView style={{ padding: 10 }}>
+      <Text style={{ fontSize: 18, marginBottom: 10 }}>Multi-Table Join</Text>
 
-      {Object.entries(selectedTables).length === 0 ? (
-        <Text style={styles.noSelection}>No tables selected.</Text>
-      ) : (
-        Object.entries(selectedTables).map(([dbKey, tables]) =>
-          Object.entries(tables).map(
-            ([tableName, isSelected]) =>
-              isSelected && (
-                <View key={`${dbKey}-${tableName}`} style={styles.tableBlock}>
-                  <Text style={styles.tableTitle}>{`${dbKey} - ${tableName}`}</Text>
-                </View>
-              )
-          )
-        )
+      {joins.map((join, idx) => (
+        <View key={idx} style={styles.joinBlock}>
+          <Text style={styles.label}>
+            Join {join.left_source} ⨝ {join.right_source}
+          </Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Left Join Column"
+            value={join.left_source_column}
+            onChangeText={(text) =>
+              handleJoinChange(idx, "left_source_column", text)
+            }
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Right Join Column"
+            value={join.right_source_column}
+            onChangeText={(text) =>
+              handleJoinChange(idx, "right_source_column", text)
+            }
+          />
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={join.type}
+              onValueChange={(val) => handleJoinChange(idx, "type", val)}
+              mode="dropdown"
+              style={styles.picker}
+            >
+              <Picker.Item label="INNER" value="INNER" />
+              <Picker.Item label="LEFT" value="LEFT" />
+              <Picker.Item label="RIGHT" value="RIGHT" />
+              <Picker.Item label="FULL" value="FULL" />
+            </Picker>
+          </View>
+        </View>
+      ))}
+
+      <Button title="Perform Join" onPress={performJoin} />
+
+      {error && (
+        <Text style={{ color: "red", marginVertical: 10 }}>{error}</Text>
       )}
 
-      <Button
-        title="Run Join on Selected Tables"
-        onPress={callJoinAPI}
-        disabled={loading}
-      />
-
-      {loading && (
-        <ActivityIndicator size="large" color="#007AFF" style={{ marginTop: 20 }} />
-      )}
-
-      {joinResult && Array.isArray(joinResult) && joinResult.length > 0 && (
-        <ScrollView horizontal style={styles.resultBox}>
-          <View>
-            <View style={styles.tableRowHeader}>
-              {Object.keys(joinResult[0]).map((key) => (
-                <Text key={key} style={styles.tableCellHeader}>
-                  {key}
-                </Text>
-              ))}
-            </View>
-            {joinResult.map((row, rowIndex) => (
-              <View key={rowIndex} style={styles.tableRow}>
-                {Object.values(row).map((value, colIndex) => (
-                  <Text key={colIndex} style={styles.tableCell}>
-                    {String(value)}
+      {Array.isArray(joinedData) && joinedData.length > 0 && (
+        <ScrollView horizontal style={styles.tableScrollX}>
+          <ScrollView style={styles.tableScrollY}>
+            <View style={styles.table}>
+              <View style={styles.tableRow}>
+                {Object.keys(joinedData[0]).map((col, idx) => (
+                  <Text key={idx} style={styles.tableHeader}>
+                    {col}
                   </Text>
                 ))}
               </View>
-            ))}
-          </View>
+              {joinedData.map((row, i) => (
+                <View key={i} style={styles.tableRow}>
+                  {Object.values(row).map((val, j) => (
+                    <Text key={j} style={styles.tableCell}>
+                      {String(val)}
+                    </Text>
+                  ))}
+                </View>
+              ))}
+            </View>
+          </ScrollView>
         </ScrollView>
       )}
     </ScrollView>
@@ -157,56 +161,58 @@ export default function JoinPage() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-  },
-  header: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 12,
-  },
-  noSelection: {
-    fontStyle: "italic",
-    color: "#888",
-    marginBottom: 16,
-  },
-  tableBlock: {
-    backgroundColor: "#eee",
-    padding: 8,
-    marginBottom: 8,
-    borderRadius: 4,
-  },
-  tableTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  resultBox: {
-    marginTop: 24,
-    backgroundColor: "#f9f9f9",
-    padding: 8,
+  joinBlock: {
+    marginBottom: 15,
+    padding: 10,
+    backgroundColor: "#f2f2f2",
     borderRadius: 6,
+  },
+  label: {
+    marginBottom: 4,
+    fontWeight: "bold",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 4,
+    padding: 6,
+    marginBottom: 6,
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 4,
+    marginBottom: 6,
+  },
+  picker: {
+    height: 40,
+    width: "100%",
+  },
+  tableScrollX: {
+    marginTop: 15,
+  },
+  tableScrollY: {
     maxHeight: 400,
+  },
+  table: {
+    borderWidth: 1,
+    borderColor: "#ccc",
   },
   tableRow: {
     flexDirection: "row",
-    paddingVertical: 6,
-    borderBottomWidth: 1,
+  },
+  tableHeader: {
+    padding: 6,
+    minWidth: 100,
+    fontWeight: "bold",
+    backgroundColor: "#eee",
+    borderWidth: 1,
     borderColor: "#ccc",
   },
-  tableRowHeader: {
-    flexDirection: "row",
-    backgroundColor: "#ddd",
-    paddingVertical: 8,
-  },
   tableCell: {
+    padding: 6,
     minWidth: 100,
-    paddingHorizontal: 8,
-    fontSize: 12,
-  },
-  tableCellHeader: {
-    minWidth: 100,
-    paddingHorizontal: 8,
-    fontWeight: "bold",
-    fontSize: 12,
+    borderWidth: 1,
+    borderColor: "#ccc",
   },
 });

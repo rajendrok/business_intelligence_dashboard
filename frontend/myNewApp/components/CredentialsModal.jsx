@@ -5,6 +5,7 @@ export default function CredentialsModal({ credentials, onChange }) {
   const handleChange = (field, value) => {
     onChange({
       ...credentials,
+      driver: credentials?.driver, // ✅ Preserve the driver
       [field]: value,
     });
   };
@@ -13,26 +14,29 @@ export default function CredentialsModal({ credentials, onChange }) {
     <View style={styles.container}>
       <TextInput
         placeholder="Username"
-         placeholderTextColor="#888"
+        placeholderTextColor="#888"
         value={credentials?.username || ''}
         onChangeText={(value) => handleChange('username', value)}
         style={styles.input}
       />
       <TextInput
         placeholder="Password"
+        placeholderTextColor="#888"
         value={credentials?.password || ''}
         secureTextEntry
-        onChangeText={(value) => handleChange('password', value)    }
+        onChangeText={(value) => handleChange('password', value)}
         style={styles.input}
       />
       <TextInput
         placeholder="Host"
+        placeholderTextColor="#888"
         value={credentials?.host || ''}
         onChangeText={(value) => handleChange('host', value)}
         style={styles.input}
       />
       <TextInput
         placeholder="Port"
+        placeholderTextColor="#888"
         keyboardType="numeric"
         value={credentials?.port?.toString() || ''}
         onChangeText={(value) => handleChange('port', value)}
@@ -40,6 +44,7 @@ export default function CredentialsModal({ credentials, onChange }) {
       />
       <TextInput
         placeholder="Database Name"
+        placeholderTextColor="#888"
         value={credentials?.database || ''}
         onChangeText={(value) => handleChange('database', value)}
         style={styles.input}
@@ -51,7 +56,7 @@ export default function CredentialsModal({ credentials, onChange }) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'column',
-    gap: 10, // For RN >= 0.71; otherwise use marginBottom
+    gap: 10, // RN >= 0.71, otherwise use marginBottom
     padding: 10,
   },
   input: {

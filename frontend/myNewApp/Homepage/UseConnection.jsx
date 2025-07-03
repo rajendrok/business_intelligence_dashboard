@@ -15,7 +15,22 @@ export default function useConnections() {
 
   const addConnection = (driver) => {
     const count = connections.filter(c => c.driver === driver).length + 1;
-    setConnections(prev => [...prev, { driver, key: `${driver}_${count}` }]);
+    const key = `${driver}_${count}`;
+    setConnections(prev => [...prev, { driver, key }]);
+
+    setCredentials(prev => ({
+      ...prev,
+      [key]: {
+        host: '',
+        port: '',
+        username: '',
+        password: '',
+        database: '',
+        driver, // ✅ Store driver here
+      },
+    }));
+
+    console.log("✅ Driver set in addConnection:", key, driver);
   };
 
   const removeConnection = (key) => {
@@ -29,14 +44,29 @@ export default function useConnections() {
       .forEach(fn => fn(prev => removeKey(prev)));
   };
 
-  const updateCredentials = (key, creds) =>
-    setCredentials(prev => ({ ...prev, [key]: creds }));
+  const updateCredentials = (key, creds) => {
+    setCredentials(prev => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        ...creds,
+        driver: prev[key]?.driver, // ✅ Preserve original driver
+      }
+    }));
+  };
 
-  const submitCredentials = async (key, driver) => {
+  const submitCredentials = async (key, fallbackDriver) => {
     const creds = credentials[key];
     if (!creds) return;
 
-    const normalized = { ...creds, port: Number(creds.port), driver };
+    const normalized = {
+      ...creds,
+      port: Number(creds.port),
+      driver: creds.driver || fallbackDriver, // ✅ Fallback fix
+    };
+
+    console.log("📤 SUBMITTING CREDS:", key, normalized);
+
     setLoadingConnections(prev => ({ ...prev, [key]: true }));
 
     try {
@@ -45,6 +75,7 @@ export default function useConnections() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(normalized),
       });
+
       if (res.ok) {
         const data = await res.json();
         setSchemas(prev => ({
