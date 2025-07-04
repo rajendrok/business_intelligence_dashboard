@@ -37,7 +37,7 @@ export default function JoinPage() {
           username: cred.username,
           password: cred.password,
           database: cred.database,
-          driver: cred.driver || "mysql", // Default to mysql if undefined
+          driver: cred.driver || "mysql",
         },
       }));
   });
@@ -56,7 +56,7 @@ export default function JoinPage() {
       }
       setJoins(newJoins);
     }
-  }, [JSON.stringify(sources)]); // prevent infinite loop
+  }, [JSON.stringify(sources)]);
 
   const handleJoinChange = (index, key, value) => {
     const updated = [...joins];
@@ -129,32 +129,40 @@ export default function JoinPage() {
       <Button title="Perform Join" onPress={performJoin} />
 
       {error && (
-        <Text style={{ color: "red", marginVertical: 10 }}>{error}</Text>
+        <View style={styles.errorBox}>
+          <Text style={styles.errorTitle}>Error</Text>
+          <Text style={styles.errorMessage}>{error}</Text>
+        </View>
       )}
 
       {Array.isArray(joinedData) && joinedData.length > 0 && (
-        <ScrollView horizontal style={styles.tableScrollX}>
-          <ScrollView style={styles.tableScrollY}>
-            <View style={styles.table}>
-              <View style={styles.tableRow}>
-                {Object.keys(joinedData[0]).map((col, idx) => (
-                  <Text key={idx} style={styles.tableHeader}>
-                    {col}
-                  </Text>
-                ))}
-              </View>
-              {joinedData.map((row, i) => (
-                <View key={i} style={styles.tableRow}>
-                  {Object.values(row).map((val, j) => (
-                    <Text key={j} style={styles.tableCell}>
-                      {String(val)}
+        <>
+          <Text style={{ marginTop: 10, fontWeight: "bold" }}>
+            Total Rows: {joinedData.length}
+          </Text>
+          <ScrollView horizontal style={styles.tableScrollX}>
+            <ScrollView style={styles.tableScrollY}>
+              <View style={styles.table}>
+                <View style={styles.tableRow}>
+                  {Object.keys(joinedData[0]).map((col, idx) => (
+                    <Text key={idx} style={styles.tableHeader}>
+                      {col}
                     </Text>
                   ))}
                 </View>
-              ))}
-            </View>
+                {joinedData.map((row, i) => (
+                  <View key={i} style={styles.tableRow}>
+                    {Object.values(row).map((val, j) => (
+                      <ScrollView key={j} horizontal style={styles.tableCell}>
+                        <Text>{String(val)}</Text>
+                      </ScrollView>
+                    ))}
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
           </ScrollView>
-        </ScrollView>
+        </>
       )}
     </ScrollView>
   );
@@ -212,7 +220,25 @@ const styles = StyleSheet.create({
   tableCell: {
     padding: 6,
     minWidth: 100,
+    maxWidth: 100,
     borderWidth: 1,
     borderColor: "#ccc",
+  },
+  errorBox: {
+    backgroundColor: "#ffe5e5",
+    borderLeftWidth: 4,
+    borderLeftColor: "#ff4d4d",
+    padding: 10,
+    marginVertical: 10,
+    borderRadius: 6,
+  },
+  errorTitle: {
+    fontWeight: "bold",
+    fontSize: 16,
+    color: "#cc0000",
+    marginBottom: 4,
+  },
+  errorMessage: {
+    color: "#660000",
   },
 });
