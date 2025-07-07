@@ -1,0 +1,60 @@
+name: gitHub_to_Server_Deployment
+on:
+  push:
+    branches: 
+      - dev
+      - test
+      - stg
+      - prod
+
+
+env:
+  IMAGE_REGISTRY: ghcr.io
+  IMAGE_NAME_BACKEND: my-backend-app
+  IMAGE_NAME_FRONTEND: my-frontend-app
+  REGISTRY_USER: kushmanda-tech
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: redhat-actions/podman-login@v1
+        with:
+          registry: ${{ env.IMAGE_REGISTRY }}
+          username: ${{ env.REGISTRY_USER }}
+          password: ${{ secrets.REGISTRY_PASSWORD_FOR_GITHUB }} 
+
+      # Set up Docker
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Authenticate with Docker registry (GitHub Packages example)
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Build & Push Backend Docker image
+      - name: Build and Push Backend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME_BACKEND }}:latest
+
+      # Build & Push Frontend Docker image
+      - name: Build and Push Frontend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend/myNewApp
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME_FRONTEND }}:latest
