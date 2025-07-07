@@ -3,7 +3,6 @@ import {
   ScrollView,
   View,
   Text,
-  TextInput,
   StyleSheet,
   Button,
 } from "react-native";
@@ -15,13 +14,13 @@ export default function JoinPage() {
     selectedTables,
     credentials,
     tableData,
+    columnsBySource, // ✅ Comes from HomePage
   } = useConnectionContext();
 
   const [joins, setJoins] = useState([]);
   const [joinedData, setJoinedData] = useState([]);
   const [error, setError] = useState(null);
 
-  // Dynamically build sources
   const sources = Object.entries(selectedTables).flatMap(([dbKey, tables]) => {
     const cred = credentials[dbKey];
     if (!cred) return [];
@@ -42,6 +41,7 @@ export default function JoinPage() {
       }));
   });
 
+  // Build join structure automatically on source change
   useEffect(() => {
     if (sources.length >= 2) {
       const newJoins = [];
@@ -94,22 +94,29 @@ export default function JoinPage() {
           <Text style={styles.label}>
             Join {join.left_source} ⨝ {join.right_source}
           </Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Left Join Column"
-            value={join.left_source_column}
-            onChangeText={(text) =>
-              handleJoinChange(idx, "left_source_column", text)
-            }
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Right Join Column"
-            value={join.right_source_column}
-            onChangeText={(text) =>
-              handleJoinChange(idx, "right_source_column", text)
-            }
-          />
+
+          <Picker
+            selectedValue={join.left_source_column}
+            onValueChange={(val) => handleJoinChange(idx, "left_source_column", val)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Select Left Column" value="" />
+            {(columnsBySource[join.left_source] || []).map((col, i) => (
+              <Picker.Item key={i} label={col} value={col} />
+            ))}
+          </Picker>
+
+          <Picker
+            selectedValue={join.right_source_column}
+            onValueChange={(val) => handleJoinChange(idx, "right_source_column", val)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Select Right Column" value="" />
+            {(columnsBySource[join.right_source] || []).map((col, i) => (
+              <Picker.Item key={i} label={col} value={col} />
+            ))}
+          </Picker>
+
           <View style={styles.pickerContainer}>
             <Picker
               selectedValue={join.type}
@@ -179,13 +186,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     fontWeight: "bold",
   },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 4,
-    padding: 6,
-    marginBottom: 6,
-  },
   pickerContainer: {
     borderWidth: 1,
     borderColor: "#ccc",
@@ -195,6 +195,8 @@ const styles = StyleSheet.create({
   picker: {
     height: 40,
     width: "100%",
+    borderWidth: 1,
+    borderColor: "#ccc",
   },
   tableScrollX: {
     marginTop: 15,

@@ -1,160 +1,261 @@
-import { useState } from 'react';
-import { Platform } from 'react-native';
+import React, { useEffect, useState } from "react";
+import {
+  ScrollView,
+  View,
+  Text,
+  StyleSheet,
+  Button,
+} from "react-native";
+import { Picker } from "@react-native-picker/picker";
+import { useConnectionContext } from "./ConnectionContext";
 
-const BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://localhost:8080';
+export default function JoinPage() {
+  const {
+    selectedTables,
+    credentials,
+    tableData,
+    columnsBySource,
+  } = useConnectionContext();
 
-export default function useConnections() {
-  const [connections, setConnections] = useState([]);
-  const [schemas, setSchemas] = useState({});
-  const [credentials, setCredentials] = useState({});
-  const [loadingConnections, setLoadingConnections] = useState({});
-  const [selectedTables, setSelectedTables] = useState({});
-  const [tableData, setTableData] = useState({});
-  const [customQueryResults, setCustomQueryResults] = useState({});
-  const [selectedGraphs, setSelectedGraphs] = useState({});
+  const [joins, setJoins] = useState([]);
+  const [joinedData, setJoinedData] = useState([]);
+  const [error, setError] = useState(null);
 
-  const addConnection = (driver) => {
-    const count = connections.filter(c => c.driver === driver).length + 1;
-    const key = `${driver}_${count}`;
-    setConnections(prev => [...prev, { driver, key }]);
+  // Build sources from selectedTables
+  const sources = Object.entries(selectedTables).flatMap(([dbKey, tables]) => {
+    const cred = credentials[dbKey];
+    if (!cred) return [];
+    return Object.keys(tables)
+      .filter((tableName) => tables[tableName])
+      .map((tableName) => ({
+        source_id: `${dbKey}_${tableName}`,
+        type: "database",
+        table: tableName,
+        credentials: {
+          host: cred.host,
+          port: parseInt(cred.port || "3306", 10),
+          username: cred.username,
+          password: cred.password,
+          database: cred.database,
+          driver: cred.driver || "mysql",
+        },
+      }));
+  });
 
-    setCredentials(prev => ({
-      ...prev,
-      [key]: {
-        host: '',
-        port: '',
-        username: '',
-        password: '',
-        database: '',
-        driver, // ✅ Store driver here
-      },
-    }));
-
-    console.log("✅ Driver set in addConnection:", key, driver);
-  };
-
-  const removeConnection = (key) => {
-    const removeKey = obj => {
-      const copy = { ...obj };
-      delete copy[key];
-      return copy;
-    };
-    setConnections(prev => prev.filter(c => c.key !== key));
-    [setSchemas, setCredentials, setLoadingConnections, setSelectedTables, setTableData, setCustomQueryResults, setSelectedGraphs]
-      .forEach(fn => fn(prev => removeKey(prev)));
-  };
-
-  const updateCredentials = (key, creds) => {
-    setCredentials(prev => ({
-      ...prev,
-      [key]: {
-        ...prev[key],
-        ...creds,
-        driver: prev[key]?.driver, // ✅ Preserve original driver
+  // Auto generate join pairs when sources change
+  useEffect(() => {
+    if (sources.length >= 2) {
+      const newJoins = [];
+      for (let i = 0; i < sources.length - 1; i++) {
+        newJoins.push({
+          left_source: sources[i].source_id,
+          right_source: sources[i + 1].source_id,
+          left_source_column: "",
+          right_source_column: "",
+          type: "INNER",
+        });
       }
-    }));
+      setJoins(newJoins);
+    }
+  }, [JSON.stringify(sources)]);
+
+  const handleJoinChange = (index, key, value) => {
+    const updated = [...joins];
+    updated[index][key] = value;
+    setJoins(updated);
   };
 
-  const submitCredentials = async (key, fallbackDriver) => {
-    const creds = credentials[key];
-    if (!creds) return;
-
-    const normalized = {
-      ...creds,
-      port: Number(creds.port),
-      driver: creds.driver || fallbackDriver, // ✅ Fallback fix
-    };
-
-    console.log("📤 SUBMITTING CREDS:", key, normalized);
-
-    setLoadingConnections(prev => ({ ...prev, [key]: true }));
-
+  const performJoin = async () => {
+    setError(null);
     try {
-      const res = await fetch(`${BASE_URL}/db-schema`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(normalized),
+      const response = await fetch("http://localhost:8080/multi-join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sources, joins }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        setSchemas(prev => ({
-          ...prev,
-          [key]: { schema: data.schema, creds: normalized },
-        }));
+      const result = await response.json();
+      if (!response.ok) {
+        setError(result.error || "Join failed.");
+        return;
       }
+
+      setJoinedData(Array.isArray(result.data) ? result.data : []);
     } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingConnections(prev => ({ ...prev, [key]: false }));
+      setError(err.message || "Failed to fetch join data.");
     }
   };
 
-  const toggleTableSelection = (dbKey, table, isChecked) => {
-    setSelectedTables(prev => {
-      const updated = { ...prev };
-      const tbls = { ...(updated[dbKey] || {}) };
-      if (isChecked) tbls[table] = tbls[table] || [];
-      else delete tbls[table];
-      updated[dbKey] = tbls;
-      return updated;
-    });
-  };
+  return (
+    <ScrollView style={{ padding: 10 }}>
+      <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}>
+        Multi-Table Join
+      </Text>
 
-  const toggleColumnSelection = (dbKey, table, column, isChecked) => {
-    setSelectedTables(prev => {
-      const updated = { ...prev };
-      const tbls = { ...(updated[dbKey] || {}) };
-      const cols = tbls[table] || [];
-      tbls[table] = isChecked ? [...new Set([...cols, column])] : cols.filter(c => c !== column);
-      updated[dbKey] = tbls;
-      return updated;
-    });
-  };
+      {joins.map((join, idx) => (
+        <View key={idx} style={styles.joinBlock}>
+          <Text style={styles.label}>
+            Join {join.left_source} ⨝ {join.right_source}
+          </Text>
 
-  const loadData = async () => {
-    for (const key in schemas) {
-      const tablesWithCols = selectedTables[key];
-      if (!tablesWithCols || !Object.keys(tablesWithCols).length) continue;
+          {/* Left Column Picker */}
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={join.left_source_column}
+              onValueChange={(val) => handleJoinChange(idx, "left_source_column", val)}
+              style={styles.picker}
+            >
+              <Picker.Item label="Select Left Column" value="" />
+              {(columnsBySource[join.left_source] || []).map((col, i) => (
+                <Picker.Item key={i} label={col} value={col} />
+              ))}
+            </Picker>
+          </View>
 
-      try {
-        const res = await fetch(`${BASE_URL}/table-data`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...schemas[key].creds,
-            tables: tablesWithCols,
-            limit: 10,
-            offset: 0,
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setTableData(prev => ({ ...prev, [key]: data }));
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  };
+          {/* Right Column Picker */}
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={join.right_source_column}
+              onValueChange={(val) => handleJoinChange(idx, "right_source_column", val)}
+              style={styles.picker}
+            >
+              <Picker.Item label="Select Right Column" value="" />
+              {(columnsBySource[join.right_source] || []).map((col, i) => (
+                <Picker.Item key={i} label={col} value={col} />
+              ))}
+            </Picker>
+          </View>
 
-  return {
-    connections,
-    addConnection,
-    removeConnection,
-    credentials,
-    updateCredentials,
-    submitCredentials,
-    schemas,
-    selectedTables,
-    toggleTableSelection,
-    toggleColumnSelection,
-    loadData,
-    tableData,
-    customQueryResults,
-    setCustomQueryResults,
-    selectedGraphs,
-    setSelectedGraphs,
-    loadingConnections,
-  };
+          {/* Join Type Picker */}
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={join.type}
+              onValueChange={(val) => handleJoinChange(idx, "type", val)}
+              style={styles.picker}
+            >
+              <Picker.Item label="INNER" value="INNER" />
+              <Picker.Item label="LEFT" value="LEFT" />
+              <Picker.Item label="RIGHT" value="RIGHT" />
+              <Picker.Item label="FULL" value="FULL" />
+            </Picker>
+          </View>
+
+          {/* Debug Output */}
+          {(columnsBySource[join.left_source]?.length === 0 ||
+            columnsBySource[join.right_source]?.length === 0) && (
+            <Text style={{ color: "red", fontSize: 12 }}>
+              ⚠️ No columns loaded. Go back and click "Load Selected Table Data"
+            </Text>
+          )}
+        </View>
+      ))}
+
+      <Button title="PERFORM JOIN" onPress={performJoin} color="#1e90ff" />
+
+      {error && (
+        <View style={styles.errorBox}>
+          <Text style={styles.errorTitle}>Error</Text>
+          <Text style={styles.errorMessage}>{error}</Text>
+        </View>
+      )}
+
+      {Array.isArray(joinedData) && joinedData.length > 0 && (
+        <>
+          <Text style={{ marginTop: 10, fontWeight: "bold" }}>
+            Total Rows: {joinedData.length}
+          </Text>
+          <ScrollView horizontal style={styles.tableScrollX}>
+            <ScrollView style={styles.tableScrollY}>
+              <View style={styles.table}>
+                <View style={styles.tableRow}>
+                  {Object.keys(joinedData[0]).map((col, idx) => (
+                    <Text key={idx} style={styles.tableHeader}>
+                      {col}
+                    </Text>
+                  ))}
+                </View>
+                {joinedData.map((row, i) => (
+                  <View key={i} style={styles.tableRow}>
+                    {Object.values(row).map((val, j) => (
+                      <ScrollView key={j} horizontal style={styles.tableCell}>
+                        <Text>{String(val)}</Text>
+                      </ScrollView>
+                    ))}
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+          </ScrollView>
+        </>
+      )}
+    </ScrollView>
+  );
 }
+
+const styles = StyleSheet.create({
+  joinBlock: {
+    marginBottom: 15,
+    padding: 10,
+    backgroundColor: "#f2f2f2",
+    borderRadius: 6,
+  },
+  label: {
+    marginBottom: 4,
+    fontWeight: "bold",
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 4,
+    marginBottom: 6,
+  },
+  picker: {
+    height: 40,
+    width: "100%",
+  },
+  tableScrollX: {
+    marginTop: 15,
+  },
+  tableScrollY: {
+    maxHeight: 400,
+  },
+  table: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+  },
+  tableRow: {
+    flexDirection: "row",
+  },
+  tableHeader: {
+    padding: 6,
+    minWidth: 100,
+    fontWeight: "bold",
+    backgroundColor: "#eee",
+    borderWidth: 1,
+    borderColor: "#ccc",
+  },
+  tableCell: {
+    padding: 6,
+    minWidth: 100,
+    maxWidth: 100,
+    borderWidth: 1,
+    borderColor: "#ccc",
+  },
+  errorBox: {
+    backgroundColor: "#ffe5e5",
+    borderLeftWidth: 4,
+    borderLeftColor: "#ff4d4d",
+    padding: 10,
+    marginVertical: 10,
+    borderRadius: 6,
+  },
+  errorTitle: {
+    fontWeight: "bold",
+    fontSize: 16,
+    color: "#cc0000",
+    marginBottom: 4,
+  },
+  errorMessage: {
+    color: "#660000",
+  },
+});

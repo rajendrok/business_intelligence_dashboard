@@ -1,5 +1,5 @@
 import { Feather as Icon } from "@expo/vector-icons";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Button,
@@ -42,6 +42,7 @@ export default function HomePage() {
     selectedGraphs,
     setSelectedGraphs,
     loadingConnections,
+    setColumnsBySource,  // ✅ Context setter
   } = useConnectionContext();
 
   const [showPopup, setShowPopup] = useState(false);
@@ -78,6 +79,20 @@ export default function HomePage() {
     loadData();
   };
 
+  // ✅ Extract column names from tableData and store in context
+  useEffect(() => {
+    const allCols = {};
+    Object.entries(tableData).forEach(([dbKey, tables]) => {
+      Object.entries(tables).forEach(([tableName, rows]) => {
+        if (Array.isArray(rows) && rows.length > 0) {
+          const colNames = Object.keys(rows[0]);
+          allCols[`${dbKey}_${tableName}`] = colNames;
+        }
+      });
+    });
+    setColumnsBySource(allCols);
+  }, [tableData]);
+
   const operations = [
     {
       label: "INNER",
@@ -103,7 +118,6 @@ export default function HomePage() {
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Overlay */}
       {isSidebarOpen && (
         <TouchableOpacity
           style={{
@@ -120,7 +134,6 @@ export default function HomePage() {
         />
       )}
 
-      {/* Sidebar */}
       <Animated.View
         style={{
           position: "absolute",
@@ -136,7 +149,6 @@ export default function HomePage() {
         <Sidebar onSelectPage={handleSelectPage} activePage={activePage} />
       </Animated.View>
 
-      {/* Toggle Button */}
       {!isSidebarOpen && (
         <TouchableOpacity
           onPress={toggleSidebar}
@@ -155,7 +167,6 @@ export default function HomePage() {
         </TouchableOpacity>
       )}
 
-      {/* Main Content */}
       <ScrollView style={styles.page}>
         <Text style={styles.title}>Multi-DB Schema Viewer</Text>
 
@@ -251,7 +262,6 @@ export default function HomePage() {
         {activePage === "DataJoins" && <JoinPage />}
       </ScrollView>
 
-      {/* Modal */}
       <Modal visible={showPopup} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>

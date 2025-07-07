@@ -1,19 +1,19 @@
-import React, { createContext, useContext } from "react";
-import useConnections from "./UseConnection.jsx";
+import React, { createContext, useContext, useState } from "react";
+import useConnections from "./UseConnection";
 
 const ConnectionContext = createContext(null);
 
 export const ConnectionProvider = ({ children }) => {
   const connectionData = useConnections();
+  const [columnsBySource, setColumnsBySource] = useState({});
 
   return (
-    <ConnectionContext.Provider value={connectionData}>
+    <ConnectionContext.Provider value={{ ...connectionData, columnsBySource, setColumnsBySource }}>
       {children}
     </ConnectionContext.Provider>
   );
 };
 
-// ✅ Add a safety check here
 export const useConnectionContext = () => {
   const context = useContext(ConnectionContext);
   if (!context) {
