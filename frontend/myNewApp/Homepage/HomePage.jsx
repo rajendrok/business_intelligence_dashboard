@@ -21,7 +21,6 @@ import styles from "./HomePageStyles";
 import Sidebar from "./Sidebar";
 import TableOutput from "./TableOutput.jsx";
 import { useConnectionContext } from "./ConnectionContext";
-import JoinPage from "./JoinPage";
 
 export default function HomePage() {
   const {
@@ -50,6 +49,12 @@ export default function HomePage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activePage, setActivePage] = useState("DataSources");
 
+  const [showDBList, setShowDBList] = useState(false);
+  const [pendingDB, setPendingDB] = useState(null);
+
+  const [selectedTablesList, setSelectedTablesList] = useState([]); // [{db, table}]
+  const [selectedJoins, setSelectedJoins] = useState([]);
+
   const slideAnim = useRef(new Animated.Value(-220)).current;
   const screenWidth = Dimensions.get("window").width;
   const isSmallScreen = screenWidth < 500;
@@ -63,17 +68,11 @@ export default function HomePage() {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  const handleSelectPage = (page) => {
-    setActivePage(page);
-    toggleSidebar();
-  };
-
   const toggleDropdown = (key) => {
     setDropdownStates((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handlePopupLoadData = () => {
-    console.log("Selected Operation:", selectedOperation);
     setShowPopup(false);
     loadData();
   };
@@ -103,7 +102,6 @@ export default function HomePage() {
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Overlay */}
       {isSidebarOpen && (
         <TouchableOpacity
           style={{
@@ -120,7 +118,6 @@ export default function HomePage() {
         />
       )}
 
-      {/* Sidebar */}
       <Animated.View
         style={{
           position: "absolute",
@@ -133,10 +130,12 @@ export default function HomePage() {
           zIndex: 10,
         }}
       >
-        <Sidebar onSelectPage={handleSelectPage} activePage={activePage} />
+        <Sidebar onSelectPage={(page) => {
+          setActivePage(page);
+          toggleSidebar();
+        }} activePage={activePage} />
       </Animated.View>
 
-      {/* Toggle Button */}
       {!isSidebarOpen && (
         <TouchableOpacity
           onPress={toggleSidebar}
@@ -155,30 +154,16 @@ export default function HomePage() {
         </TouchableOpacity>
       )}
 
-      {/* Main Content */}
       <ScrollView style={styles.page}>
         <Text style={styles.title}>Multi-DB Schema Viewer</Text>
 
         {activePage === "DataSources" && (
           <>
             <DatabaseSelector onAddDatabase={addConnection} />
-            <View
-              style={[
-                styles.gridContainer,
-                { flexDirection: isSmallScreen ? "column" : "row" },
-              ]}
-            >
+
+            <View style={styles.gridContainer}>
               {connections.map((conn) => (
-                <View
-                  key={conn.key}
-                  style={[
-                    styles.connectionCard,
-                    {
-                      flexBasis: isSmallScreen ? "100%" : "48%",
-                      minWidth: isSmallScreen ? "100%" : 160,
-                    },
-                  ]}
-                >
+                <View key={conn.key} style={styles.connectionCard}>
                   <ConnectionBlock
                     driver={conn.driver}
                     dbKey={conn.key}
@@ -187,17 +172,10 @@ export default function HomePage() {
                     loading={loadingConnections[conn.key]}
                     selectedTables={selectedTables[conn.key] || {}}
                     onRemove={() => removeConnection(conn.key)}
-                    onUpdateCreds={(creds) =>
-                      updateCredentials(conn.key, creds)
-                    }
-                    onSubmitCreds={() =>
-                      submitCredentials(conn.key, conn.driver)
-                    }
+                    onUpdateCreds={(creds) => updateCredentials(conn.key, creds)}
+                    onSubmitCreds={() => submitCredentials(conn.key, conn.driver)}
                     onCustomQuery={(result) =>
-                      setCustomQueryResults((prev) => ({
-                        ...prev,
-                        [conn.key]: result,
-                      }))
+                      setCustomQueryResults((prev) => ({ ...prev, [conn.key]: result }))
                     }
                     onToggleColumn={(table, col, isChecked) =>
                       toggleColumnSelection(conn.key, table, col, isChecked)
@@ -206,10 +184,7 @@ export default function HomePage() {
                       toggleTableSelection(conn.key, table, isChecked)
                     }
                     onSelectChart={(chart) =>
-                      setSelectedGraphs((prev) => ({
-                        ...prev,
-                        [conn.key]: chart,
-                      }))
+                      setSelectedGraphs((prev) => ({ ...prev, [conn.key]: chart }))
                     }
                     showForm={dropdownStates[conn.key]}
                     onToggleForm={() => toggleDropdown(conn.key)}
@@ -218,44 +193,129 @@ export default function HomePage() {
               ))}
             </View>
 
-            {connections.length > 0 && (
-              <>
-                <View style={styles.loadButton}>
-                  <Button
-                    title="Load Selected Table Data"
-                    onPress={() => setShowPopup(true)}
-                  />
-                </View>
-                {connections.map(({ key }) => (
-                  <View
-                    key={key}
-                    style={[
-                      styles.resultBox,
-                      { backgroundColor: getColorForKey(key) },
-                    ]}
-                  >
-                    <TableOutput
-                      dbKey={key}
-                      tableData={tableData[key]}
-                      customQueryResults={customQueryResults[key]}
-                    />
-                    <GraphOutput graph={selectedGraphs[key]} />
-                  </View>
+            {/* + Icon DB -> Table Selector Row */}
+            <View style={styles.dbSelectorRow}>
+              <ScrollView horizontal contentContainerStyle={styles.dbSelectorScroll}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowDBList(!showDBList);
+                    setPendingDB(null);
+                  }}
+                  style={styles.plusButton}
+                >
+                  <Icon name="plus" size={20} color="#fff" />
+                </TouchableOpacity>
+
+                {selectedTablesList.map((entry, idx) => (
+                  <React.Fragment key={idx}>
+                    <View style={styles.dbItem}>
+                      <Text style={styles.dbText}>{entry.table}</Text>
+                    </View>
+                    {idx < selectedTablesList.length - 1 && (
+                      <TouchableOpacity
+                        onPress={() => {
+                          const joins = ["INNER", "LEFT", "RIGHT", "FULL OUTER"];
+                          setSelectedJoins((prev) => {
+                            const next = [...prev];
+                            const currentIdx = joins.indexOf(prev[idx] || "INNER");
+                            next[idx] = joins[(currentIdx + 1) % joins.length];
+                            return next;
+                          });
+                        }}
+                        style={styles.joinButton}
+                      >
+                        <Text>{selectedJoins[idx]}</Text>
+                      </TouchableOpacity>
+                    )}
+                  </React.Fragment>
                 ))}
-              </>
+              </ScrollView>
+
+              {/* Dropdown for DB List */}
+              {showDBList && (
+                <View style={styles.dropdownContainer}>
+                  <ScrollView>
+                    {connections
+                      .filter((conn) => schemas[conn.key])
+                      .map((conn, idx) => (
+                        <TouchableOpacity
+                          key={idx}
+                          onPress={() => {
+                            setPendingDB(conn.key);
+                            setShowDBList(false);
+                          }}
+                          style={styles.dropdownItem}
+                        >
+                          <Text style={styles.dropdownText}>{conn.key}</Text>
+                        </TouchableOpacity>
+                      ))}
+                  </ScrollView>
+                </View>
+              )}
+
+              {/* Dropdown for Table List of Selected DB */}
+              {pendingDB && (
+                <View style={styles.dropdownContainer}>
+                  <ScrollView>
+                    {(schemas[pendingDB]?.tables || []).map((table, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        onPress={() => {
+                          setSelectedTablesList((prev) => [...prev, { db: pendingDB, table }]);
+                          if (selectedTablesList.length > 0) {
+                            setSelectedJoins((prev) => [...prev, "INNER"]);
+                          }
+                          setPendingDB(null);
+                        }}
+                        style={styles.dropdownItem}
+                      >
+                        <Text style={styles.dropdownText}>{table}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
+
+            {/* Load Data Button */}
+            {selectedTablesList.length < 2 && (
+              <Text style={{ textAlign: "center", color: "red", marginTop: 10 }}>
+                Please select at least 2 tables to join.
+              </Text>
             )}
+            <View style={styles.loadButton}>
+              <Button
+                title="Load Selected Table Data"
+                onPress={() => setShowPopup(true)}
+                disabled={selectedTablesList.length < 2}
+              />
+            </View>
+
+            {/* Render Results */}
+            {connections.map(({ key }) => (
+              <View
+                key={key}
+                style={[styles.resultBox, { backgroundColor: getColorForKey(key) }]}
+              >
+                <TableOutput
+                  dbKey={key}
+                  tableData={tableData[key]}
+                  customQueryResults={customQueryResults[key]}
+                />
+                <GraphOutput graph={selectedGraphs[key]} />
+              </View>
+            ))}
           </>
         )}
 
         {activePage === "FileUploads" && <FileUploader />}
-        {activePage === "DataJoins" && <JoinPage />}
       </ScrollView>
 
-      {/* Modal */}
+      {/* Modal Join Operation */}
       <Modal visible={showPopup} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>Select Set Operation</Text>
+            <Text style={styles.modalTitle}>Select Join Operation</Text>
             <View style={styles.operationGrid}>
               {operations.map((op) => (
                 <TouchableOpacity

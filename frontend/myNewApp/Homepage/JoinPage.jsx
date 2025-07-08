@@ -130,7 +130,7 @@ export default function JoinPage() {
 
       {error && (
         <View style={styles.errorBox}>
-          <Text style={styles.errorTitle}>Error</Text>
+          <Text style={styles.errorTitle}>Error</Text> 
           <Text style={styles.errorMessage}>{error}</Text>
         </View>
       )}

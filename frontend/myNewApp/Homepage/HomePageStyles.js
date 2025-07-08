@@ -16,11 +16,82 @@ export default StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     marginBottom: 20,
+  
   },
   connectionCard: {
     marginBottom: 10,
+    width:"30%"
+  },
+  dbSelectorRow: {
+    maxHeight: 200,
+    marginTop: 13,
+    zIndex: 5,
+
+  },
+  dbSelectorScroll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  plusButton: {
+    backgroundColor: '#007bff',
+    padding: 10,
+    borderRadius: 25,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  dbItem: {
+    backgroundColor: '#e6f0ff',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#007bff',
+    marginRight: 6,
+  },
+  dbText: {
+    fontWeight: 'bold',
+    color: '#007bff',
+  },
+  joinButton: {
+    backgroundColor: '#fff8e1',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#aaa',
+    marginRight: 6,
+  },
+  dropdownContainer: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    maxHeight: 200,
+    width: 220,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 10,
+    zIndex: 20,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  dropdownItem: {
+    backgroundColor: '#e6f0ff',
+    padding: 10,
+    borderRadius: 6,
+    marginBottom: 8,
+  },
+  dropdownText: {
+    fontWeight: 'bold',
+    color: '#00509e',
   },
   loadButton: {
+    marginTop: 130,
     marginVertical: 20,
   },
   resultBox: {
@@ -77,6 +148,6 @@ export default StyleSheet.create({
     marginTop: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    flexWrap: 'wrap', // let buttons stack if screen is narrow
+    flexWrap: 'wrap',
   },
 });
