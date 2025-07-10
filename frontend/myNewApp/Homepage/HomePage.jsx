@@ -56,8 +56,6 @@ export default function HomePage() {
   const [selectedJoins, setSelectedJoins] = useState([]);
 
   const slideAnim = useRef(new Animated.Value(-220)).current;
-  const screenWidth = Dimensions.get("window").width;
-  const isSmallScreen = screenWidth < 500;
 
   const toggleSidebar = () => {
     Animated.timing(slideAnim, {
@@ -68,40 +66,21 @@ export default function HomePage() {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  const toggleDropdown = (key) => {
-    setDropdownStates((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
   const handlePopupLoadData = () => {
     setShowPopup(false);
     loadData();
   };
 
   const operations = [
-    {
-      label: "INNER",
-      value: "INNER",
-      img: "https://www.ionos.de/digitalguide/fileadmin/DigitalGuide/Screenshots_2018/innerjoin.png",
-    },
-    {
-      label: "FULL OUTER",
-      value: "FULL OUTER",
-      img: "https://images.ctfassets.net/xwxknivhjv1b/7hIqCjp2AlwIrXQLYvU1aa/a1911afdf05351ea02e9b943897522b7/image5__3_.png",
-    },
-    {
-      label: "LEFT OUTER",
-      value: "LEFT OUTER",
-      img: "https://dailyblog908.weebly.com/uploads/1/3/7/7/137764733/198687306.jpg",
-    },
-    {
-      label: "RIGHT OUTER",
-      value: "RIGHT OUTER",
-      img: "https://dotnettutorials.net/wp-content/uploads/2021/11/word-image-419.png",
-    },
+    { label: "INNER", value: "INNER" },
+    { label: "FULL OUTER", value: "FULL OUTER" },
+    { label: "LEFT OUTER", value: "LEFT OUTER" },
+    { label: "RIGHT OUTER", value: "RIGHT OUTER" },
   ];
 
   return (
     <View style={{ flex: 1 }}>
+      {/* Sidebar Overlay */}
       {isSidebarOpen && (
         <TouchableOpacity
           style={{
@@ -118,6 +97,7 @@ export default function HomePage() {
         />
       )}
 
+      {/* Sidebar Drawer */}
       <Animated.View
         style={{
           position: "absolute",
@@ -130,12 +110,16 @@ export default function HomePage() {
           zIndex: 10,
         }}
       >
-        <Sidebar onSelectPage={(page) => {
-          setActivePage(page);
-          toggleSidebar();
-        }} activePage={activePage} />
+        <Sidebar
+          onSelectPage={(page) => {
+            setActivePage(page);
+            toggleSidebar();
+          }}
+          activePage={activePage}
+        />
       </Animated.View>
 
+      {/* Hamburger */}
       {!isSidebarOpen && (
         <TouchableOpacity
           onPress={toggleSidebar}
@@ -187,13 +171,18 @@ export default function HomePage() {
                       setSelectedGraphs((prev) => ({ ...prev, [conn.key]: chart }))
                     }
                     showForm={dropdownStates[conn.key]}
-                    onToggleForm={() => toggleDropdown(conn.key)}
+                    onToggleForm={() =>
+                      setDropdownStates((prev) => ({
+                        ...prev,
+                        [conn.key]: !prev[conn.key],
+                      }))
+                    }
                   />
                 </View>
               ))}
             </View>
 
-            {/* + Icon DB -> Table Selector Row */}
+            {/* Join Chain Section */}
             <View style={styles.dbSelectorRow}>
               <ScrollView horizontal contentContainerStyle={styles.dbSelectorScroll}>
                 <TouchableOpacity
@@ -207,7 +196,7 @@ export default function HomePage() {
                 </TouchableOpacity>
 
                 {selectedTablesList.map((entry, idx) => (
-                  <React.Fragment key={idx}>
+                  <React.Fragment key={`${entry.db}_${entry.table}_${idx}`}>
                     <View style={styles.dbItem}>
                       <Text style={styles.dbText}>{entry.table}</Text>
                     </View>
@@ -253,31 +242,43 @@ export default function HomePage() {
                 </View>
               )}
 
-              {/* Dropdown for Table List of Selected DB */}
-              {pendingDB && (
+              {/* Dropdown for Table List */}
+              {pendingDB && schemas[pendingDB] && (
                 <View style={styles.dropdownContainer}>
                   <ScrollView>
-                    {(schemas[pendingDB]?.tables || []).map((table, index) => (
-                      <TouchableOpacity
-                        key={index}
-                        onPress={() => {
-                          setSelectedTablesList((prev) => [...prev, { db: pendingDB, table }]);
-                          if (selectedTablesList.length > 0) {
-                            setSelectedJoins((prev) => [...prev, "INNER"]);
-                          }
-                          setPendingDB(null);
-                        }}
-                        style={styles.dropdownItem}
-                      >
-                        <Text style={styles.dropdownText}>{table}</Text>
-                      </TouchableOpacity>
-                    ))}
+                    {Object.keys(schemas[pendingDB]?.schema?.tables || {}).map((table, index) => {
+                      const alreadyExists = selectedTablesList.some(
+                        (entry) => entry.db === pendingDB && entry.table === table
+                      );
+                      return (
+                        <TouchableOpacity
+                          key={index}
+                          onPress={() => {
+                            if (alreadyExists) {
+                              setPendingDB(null);
+                              return;
+                            }
+
+                            setSelectedTablesList((prev) => [...prev, { db: pendingDB, table }]);
+                            if (selectedTablesList.length > 0) {
+                              setSelectedJoins((prev) => [...prev, "INNER"]);
+                            }
+                            setPendingDB(null);
+                          }}
+                          style={styles.dropdownItem}
+                        >
+                          <Text style={styles.dropdownText}>
+                            {table} {alreadyExists ? "(already selected)" : ""}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
                   </ScrollView>
                 </View>
               )}
             </View>
 
-            {/* Load Data Button */}
+            {/* Load Data */}
             {selectedTablesList.length < 2 && (
               <Text style={{ textAlign: "center", color: "red", marginTop: 10 }}>
                 Please select at least 2 tables to join.
@@ -291,12 +292,9 @@ export default function HomePage() {
               />
             </View>
 
-            {/* Render Results */}
+            {/* Output */}
             {connections.map(({ key }) => (
-              <View
-                key={key}
-                style={[styles.resultBox, { backgroundColor: getColorForKey(key) }]}
-              >
+              <View key={key} style={[styles.resultBox, { backgroundColor: getColorForKey(key) }]}>
                 <TableOutput
                   dbKey={key}
                   tableData={tableData[key]}
@@ -311,7 +309,7 @@ export default function HomePage() {
         {activePage === "FileUploads" && <FileUploader />}
       </ScrollView>
 
-      {/* Modal Join Operation */}
+      {/* Join Modal */}
       <Modal visible={showPopup} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
