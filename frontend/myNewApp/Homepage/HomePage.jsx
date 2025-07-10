@@ -170,6 +170,7 @@ export default function HomePage() {
             </View>
 
             {/* JoinChain handles the + icon UI */}
+            
             <JoinChain />
 
             <View style={styles.loadButton}>

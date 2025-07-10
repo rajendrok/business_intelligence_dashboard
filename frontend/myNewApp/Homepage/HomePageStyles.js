@@ -66,9 +66,9 @@ export default StyleSheet.create({
   },
   dropdownContainer: {
     position: 'absolute',
-    top: 60,
-    left: 20,
-    maxHeight: 200,
+    top: -20,
+    left: 50,
+    maxHeight: 100,
     width: 220,
     backgroundColor: '#fff',
     borderRadius: 10,

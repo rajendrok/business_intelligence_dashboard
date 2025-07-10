@@ -1,4 +1,8 @@
+
+
 import React, { useState } from "react";
+import { Modal } from "react-native";
+
 import {
   ScrollView,
   Text,
@@ -10,412 +14,430 @@ import { Feather as Icon } from "@expo/vector-icons";
 import styles from "./HomePageStyles";
 import { useConnectionContext } from "./ConnectionContext";
 
-export default function JoinChain() {
+const JoinBlock = ({ blockId, isActive, setActiveBlock }) => {
+  const [columnModalVisible, setColumnModalVisible] = useState(false);
+  const [activeColumnIndex, setActiveColumnIndex] = useState(null);
+
   const { connections, schemas } = useConnectionContext();
-  const [showDBList, setShowDBList] = useState(false);
   const [pendingDB, setPendingDB] = useState(null);
   const [selectedTablesList, setSelectedTablesList] = useState([]);
   const [selectedJoins, setSelectedJoins] = useState([]);
   const [expandedDropdowns, setExpandedDropdowns] = useState({});
   const [selectedColumns, setSelectedColumns] = useState({});
-  const [tableRawData, setTableRawData] = useState({});
   const [joinedData, setJoinedData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 300;
 
-  const toggleDropdown = (index) => {
+  const toggleDropdown = (index) =>
     setExpandedDropdowns((prev) => ({
       ...prev,
       [index]: !prev[index],
     }));
-  };
 
-  const handleJoinAndLoad = async () => {
-    if (selectedTablesList.length < 2) {
-      alert("Please select at least 2 tables");
-      return;
+const handleJoinAndLoad = async () => {
+  if (selectedTablesList.length < 2) {
+    alert("Select at least 2 tables");
+    return;
+  }
+
+  const sources = selectedTablesList.map((e, i) => ({
+    source_id: `src${i + 1}`,
+    type: "database",
+    table: e.table,
+    credentials: {
+      ...schemas[e.db].creds,
+      limit: 100,
+      offset: 0,
+    },
+  }));
+
+const joins = selectedTablesList.slice(1).map((_, i) => ({
+  left_source: `src${i + 1}`,
+  right_source: `src${i + 2}`,
+  left_source_column: selectedColumns[i] || "id",    // ✅ FIXED
+  right_source_column: selectedColumns[i + 1] || "id", // ✅ FIXED
+  type: selectedJoins[i] || "INNER",
+}));
+
+
+  setLoading(true);
+  try {
+    console.log("Sending payload:", JSON.stringify({ sources, joins }, null, 2));
+    
+    const res = await fetch("http://192.168.0.100:8080/multi-join", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sources, joins }),
+    });
+
+    const json = await res.json();
+    console.log("Backend response:", JSON.stringify(json, null, 2)); // 👈 THIS IS MOST IMPORTANT
+
+    if (json.data && Array.isArray(json.data)) {
+      setJoinedData(json.data);
+    } else {
+      alert("No data found or wrong response format");
+      setJoinedData([]);
     }
+  } catch (e) {
+    console.error("Join Error:", e);
+    alert("Failed to load data");
+  } finally {
+    setLoading(false);
+  }
+};
 
-    const sources = selectedTablesList.map((entry, index) => ({
-      source_id: `src${index + 1}`,
-      type: "database",
-      table: entry.table,
-      credentials: {
-        ...schemas[entry.db].creds,
-        limit: 100,
-        offset: 0,
-      },
-    }));
-
-    const joins = selectedTablesList.slice(1).map((_, index) => ({
-      left_source: `src${index + 1}`,
-      right_source: `src${index + 2}`,
-      left_column: selectedColumns[index] || "id",
-      right_column: selectedColumns[index + 1] || "id",
-      type: selectedJoins[index] || "INNER",
-    }));
-
-    const payload = { sources, joins };
-    console.log("Sending payload:", JSON.stringify(payload, null, 2));
-
-    try {
-      setLoading(true);
-      const response = await fetch("http://192.168.0.100:8080/multi-join", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const result = await response.json();
-      console.log("Join result:", result);
-
-      if (Array.isArray(result.data) && result.data.length > 0) {
-        setJoinedData(result.data);
-        setCurrentPage(1);
-      } else {
-        alert("No data received or empty result.");
-        setJoinedData([]);
-      }
-    } catch (err) {
-      console.error("Join failed:", err);
-      alert("Failed to load joined data.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const paginatedData = joinedData
     ? joinedData.slice((currentPage - 1) * pageSize, currentPage * pageSize)
     : [];
-
   const totalPages = joinedData ? Math.ceil(joinedData.length / pageSize) : 0;
 
-return (
-  <View>
-    {/* SECTION 1: Top row with + icon and selected tables */}
-    <ScrollView
-      horizontal
-      contentContainerStyle={styles.dbSelectorScroll}
-      style={styles.dbSelectorRow}
+  return (
+    <View
+      style={{
+        marginVertical: 16,
+        borderWidth: 1,
+        borderColor: "#ccc",
+        borderRadius: 8,
+        padding: 8,
+      }}
     >
-      {/* + Icon */}
-      <TouchableOpacity
-        onPress={() => {
-          setShowDBList(!showDBList);
-          setPendingDB(null);
+      {/* HEADER ROW */}
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
         }}
-        style={styles.plusButton}
       >
-        <Icon name="plus" size={20} color="#fff" />
-      </TouchableOpacity>
-
-      {/* Selected Tables with Column + Join Option */}
-      {selectedTablesList.map((entry, idx) => {
-        const columns = schemas[entry.db]?.schema?.tables?.[entry.table] ?? [];
-        const selectedCol = selectedColumns[idx];
-
-        return (
-          <React.Fragment key={`${entry.db}_${entry.table}_${idx}`}>
-            <View style={[styles.dbItem, { marginRight: 6 }]}>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text style={styles.dbText}>
-                  {entry.table}
-                  {selectedCol ? ` (${selectedCol})` : ""}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => toggleDropdown(idx)}
-                  style={{ marginLeft: 6 }}
-                >
-                  <Icon
-                    name={expandedDropdowns[idx] ? "chevron-up" : "chevron-down"}
-                    size={16}
-                    color="#000"
-                  />
-                </TouchableOpacity>
-              </View>
-
-              {expandedDropdowns[idx] && (
-                <View
-                  style={{
-                    backgroundColor: "#f0f0f0",
-                    borderRadius: 6,
-                    marginTop: 6,
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    maxHeight: 140,
-                    width: 200,
-                  }}
-                >
-                  <Text style={{ fontWeight: "bold", marginBottom: 4 }}>
-                    Select a column:
-                  </Text>
-                  <ScrollView>
-                    {columns.map((col, i) => (
-                      <TouchableOpacity
-                        key={i}
-                        onPress={() => {
-                          setSelectedColumns((prev) => ({
-                            ...prev,
-                            [idx]: col,
-                          }));
-                          toggleDropdown(idx);
-                        }}
-                      >
-                        <Text
-                          style={{
-                            paddingVertical: 4,
-                            paddingLeft: 8,
-                            color: selectedCol === col ? "#007bff" : "#000",
-                            fontWeight: selectedCol === col ? "bold" : "normal",
-                          }}
-                        >
-                          • {col}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
-            </View>
-
-            {/* Join Type Selector */}
-            {idx < selectedTablesList.length - 1 && (
-              <TouchableOpacity
-                onPress={() => {
-                  const joins = ["INNER", "LEFT", "RIGHT", "FULL OUTER"];
-                  setSelectedJoins((prev) => {
-                    const next = [...prev];
-                    const currentIdx = joins.indexOf(prev[idx] || "INNER");
-                    next[idx] = joins[(currentIdx + 1) % joins.length];
-                    return next;
-                  });
-                }}
-                style={styles.joinButton}
-              >
-                <Text>{selectedJoins[idx]}</Text>
-              </TouchableOpacity>
-            )}
-          </React.Fragment>
-        );
-      })}
-
-      {/* Load Data Button */}
-      {selectedTablesList.length >= 2 && (
+        <Text style={{ fontWeight: "bold" }}>Join Section #{blockId}</Text>
         <TouchableOpacity
-          onPress={handleJoinAndLoad}
-          style={[
-            styles.joinButton,
-            { backgroundColor: "#2196F3", marginLeft: 10 },
-          ]}
+          onPress={() => setActiveBlock(isActive ? null : blockId)}
         >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={{ color: "#fff", fontWeight: "bold" }}>
-              Load Data
-            </Text>
-          )}
+          <Icon name="plus" size={20} color={isActive ? "red" : "#000"} />
         </TouchableOpacity>
-      )}
-    </ScrollView>
-
-    {/* SECTION 2: DB List Dropdown */}
-    {showDBList && (
-      <View style={styles.dropdownContainer}>
-        <ScrollView>
-          {connections
-            .filter((conn) => schemas[conn.key])
-            .map((conn, idx) => (
-              <TouchableOpacity
-                key={idx}
-                onPress={() => {
-                  setPendingDB(conn.key);
-                  setShowDBList(false);
-                }}
-                style={styles.dropdownItem}
-              >
-                <Text style={styles.dropdownText}>{conn.key}</Text>
-              </TouchableOpacity>
-            ))}
-        </ScrollView>
       </View>
-    )}
 
-    {/* SECTION 3: Table Dropdown from selected DB */}
-    {pendingDB && schemas[pendingDB] && (
-      <View style={styles.dropdownContainer}>
-        <ScrollView>
-          {Object.keys(schemas[pendingDB]?.schema?.tables || {}).map(
-            (table, index) => {
-              const alreadyExists = selectedTablesList.some(
-                (entry) => entry.db === pendingDB && entry.table === table
-              );
-              return (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => {
-                    if (alreadyExists) {
-                      setPendingDB(null);
-                      return;
-                    }
-                    setSelectedTablesList((prev) => [
-                      ...prev,
-                      { db: pendingDB, table },
-                    ]);
-                    if (selectedTablesList.length > 0) {
-                      setSelectedJoins((prev) => [...prev, "INNER"]);
-                    }
-                    setPendingDB(null);
-
-                    fetch("http://192.168.0.100:8080/table-data", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        driver: schemas[pendingDB].creds.driver,
-                        ...schemas[pendingDB].creds,
-                        tables: {
-                          [table]: schemas[pendingDB].schema.tables[table],
-                        },
-                        limit: 100,
-                        offset: 0,
-                      }),
-                    })
-                      .then((res) => res.json())
-                      .then((res) => {
-                        if (!res || !res.data) return;
-                        const dataKeys = Object.keys(res.data);
-                        const matchedKey = dataKeys.find(
-                          (key) => key.toLowerCase() === table.toLowerCase()
-                        );
-                        setTableRawData((prev) => ({
-                          ...prev,
-                          [table]: matchedKey ? res.data[matchedKey] : [],
-                        }));
-                      });
-                  }}
-                  style={styles.dropdownItem}
-                >
-                  <Text style={styles.dropdownText}>
-                    {table} {alreadyExists ? "(already selected)" : ""}
-                  </Text>
-                </TouchableOpacity>
-              );
-            }
-          )}
-        </ScrollView>
-      </View>
-    )}
-
-    {/* SECTION 4: Joined Table Result Display */}
-    {joinedData && Array.isArray(joinedData) && joinedData.length > 0 && (
-      <View style={{ marginTop: 20 }}>
-        <Text style={{ fontSize: 16, fontWeight: "bold", marginBottom: 4 }}>
-          Joined Table Result:
-        </Text>
-        <Text
-          style={{
-            fontSize: 14,
-            fontWeight: "bold",
-            color: "#1976D2",
-            marginBottom: 8,
-          }}
-        >
-          Total Rows: {joinedData.length}
-        </Text>
-
-        {/* Table Scrollable Display */}
-        <ScrollView horizontal>
-          <ScrollView style={{ maxHeight: 300 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                backgroundColor: "#eee",
-                borderBottomWidth: 1,
-              }}
+      {isActive && (
+        <View style>
+          {/* TABLE SELECTOR ROW */}
+          <ScrollView horizontal style={{ marginVertical: 8 }}>
+            {/* DB dropdown */}
+            <TouchableOpacity
+              onPress={() =>
+                setPendingDB(pendingDB ? null : pendingDB || "open")
+              }
+              style={styles.plusButton}
             >
-              {Object.keys(paginatedData[0]).map((col, index) => (
-                <Text
-                  key={index}
-                  style={{
-                    padding: 8,
-                    minWidth: 120,
-                    fontWeight: "bold",
-                    borderRightWidth: 1,
-                    borderColor: "#ccc",
-                  }}
-                >
-                  {col}
-                </Text>
-              ))}
-            </View>
+              <Icon name="plus" size={20} color="#fff" />
+            </TouchableOpacity>
 
-            {paginatedData.map((row, rowIndex) => (
-              <View
-                key={rowIndex}
-                style={{
-                  flexDirection: "row",
-                  borderBottomWidth: 1,
-                  borderColor: "#eee",
-                  backgroundColor: rowIndex % 2 === 0 ? "#fafafa" : "#fff",
-                }}
-              >
-                {Object.values(row).map((value, colIndex) => (
-                  <Text
-                    key={colIndex}
-                    style={{
-                      padding: 8,
-                      minWidth: 120,
-                      borderRightWidth: 1,
-                      borderColor: "#f0f0f0",
-                    }}
-                  >
-                    {String(value)}
-                  </Text>
-                ))}
-              </View>
-            ))}
-          </ScrollView>
-        </ScrollView>
+           {selectedTablesList.map((entry, idx) => {
+  const cols = schemas[entry.db]?.schema?.tables?.[entry.table] || [];
+  const selCol = selectedColumns[idx];
 
-        {/* Pagination Controls */}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "center",
-            marginTop: 10,
-          }}
-        >
-          <TouchableOpacity
-            disabled={currentPage === 1}
-            onPress={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            style={{ marginHorizontal: 10 }}
-          >
-            <Text style={{ color: currentPage === 1 ? "#ccc" : "#007bff" }}>
-              Previous
-            </Text>
-          </TouchableOpacity>
-
-          <Text style={{ fontWeight: "bold" }}>
-            Page {currentPage} of {totalPages}
+  return (
+    <React.Fragment key={`${entry.db}-${idx}`}>
+      {/* Table Display */}
+      <View style={[styles.dbItem, { marginRight: 6 }]}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <Text style={styles.dbText}>
+            {entry.table}{selCol ? ` (${selCol})` : ""}
           </Text>
-
           <TouchableOpacity
-            disabled={currentPage === totalPages}
-            onPress={() =>
-              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-            }
-            style={{ marginHorizontal: 10 }}
+            onPress={() => {
+              setActiveColumnIndex(idx);
+              setColumnModalVisible(true);
+            }}
+            style={{ marginLeft: 6 }}
           >
-            <Text style={{ color: currentPage === totalPages ? "#ccc" : "#007bff" }}>
-              Next
-            </Text>
+            <Icon name="edit-2" size={16} />
           </TouchableOpacity>
         </View>
       </View>
-    )}
+
+      {/* JOIN TYPE SELECTOR (only between tables) */}
+      {idx < selectedTablesList.length - 1 && (
+        <View style={{
+          justifyContent: "center",
+          marginHorizontal: 4,
+          paddingHorizontal: 6,
+          paddingVertical: 2,
+          borderRadius: 4,
+          backgroundColor: "#ddd"
+        }}>
+          <TouchableOpacity
+            onPress={() => {
+              const next = { INNER: "LEFT", LEFT: "RIGHT", RIGHT: "FULL", FULL: "INNER" };
+              setSelectedJoins((prev) => ({
+                ...prev,
+                [idx]: next[prev[idx] || "INNER"]
+              }));
+            }}
+          >
+            <Text style={{ fontWeight: "bold" }}>{selectedJoins[idx] || "INNER"}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </React.Fragment>
+  );
+})}
+
+
+            {selectedTablesList.length >= 2 && (
+              <TouchableOpacity
+                onPress={handleJoinAndLoad}
+                style={[styles.joinButton, { backgroundColor: "#2196F3" }]}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={{ color: "#fff" }}>Load</Text>
+                )}
+              </TouchableOpacity>
+            )}
+          </ScrollView>
+
+          {/* DB LIST DROPDOWN */}
+          {isActive && pendingDB === "open" && (
+            <View style={styles.dropdownContainer}>
+              <ScrollView>
+                {connections
+                  .filter((c) => schemas[c.key])
+                  .map((c, i) => (
+                    <TouchableOpacity
+                      key={i}
+                      onPress={() => setPendingDB(c.key)}
+                      style={styles.dropdownItem}
+                    >
+                      <Text style={styles.dropdownText}>{c.key}</Text>
+                    </TouchableOpacity>
+                  ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* TABLE LIST */}
+          {isActive &&
+            pendingDB &&
+            pendingDB !== "open" &&
+            schemas[pendingDB] && (
+              <View style={styles.dropdownContainer}>
+                <ScrollView>
+                  {Object.keys(schemas[pendingDB].schema.tables).map(
+                    (tbl, i) => (
+                      <TouchableOpacity
+                        key={i}
+                        onPress={() => {
+                          setSelectedTablesList((p) => [
+                            ...p,
+                            { db: pendingDB, table: tbl },
+                          ]);
+                          setSelectedJoins((p) =>
+                            p.length > 0 ? [...p, "INNER"] : p
+                          );
+                          setPendingDB(null);
+                        }}
+                        style={styles.dropdownItem}
+                      >
+                        <Text style={styles.dropdownText}>{tbl}</Text>
+                      </TouchableOpacity>
+                    )
+                  )}
+                </ScrollView>
+              </View>
+            )}
+
+          {/* RESULT SET */}
+          {joinedData && joinedData.length > 0 && (
+            <View style={{ marginTop: 16 }}>
+              <Text style={{ fontWeight: "bold" }}>
+                Total Rows: {joinedData.length}
+              </Text>
+              <ScrollView horizontal>
+                <ScrollView style={{ maxHeight: 300 }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      backgroundColor: "#eee",
+                      padding: 8,
+                    }}
+                  >
+                    {Object.keys(paginatedData[0]).map((col) => (
+                      <Text
+                        key={col}
+                        style={{ fontWeight: "bold", minWidth: 120 }}
+                      >
+                        {col}
+                      </Text>
+                    ))}
+                  </View>
+  {paginatedData.map((row, idx) => (
+  <View
+    key={idx}
+    style={{
+      flexDirection: "row",
+      padding: 8,
+      backgroundColor: idx % 2 ? "#fafafa" : "#fff",
+    }}
+  >
+    {Object.values(row).map((val, j) => (
+    <Text key={j} style={{ minWidth: 120 }}>
+  {val != null ? String(val) : ""}
+</Text>
+
+    ))}
   </View>
-);
+))}
 
+                </ScrollView>
+              </ScrollView>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "center",
+                  marginTop: 8,
+                }}
+              >
+                <TouchableOpacity
+                  disabled={currentPage === 1}
+                  onPress={() => setCurrentPage((p) => p - 1)}
+                >
+                  <Text
+                    style={{
+                      margin: 8,
+                      color: currentPage === 1 ? "#ccc" : "#007bff",
+                    }}
+                  >
+                    Prev
+                  </Text>
+                </TouchableOpacity>
+                <Text style={{ margin: 8 }}>
+                  {currentPage}/{totalPages}
+                </Text>
+                <TouchableOpacity
+                  disabled={currentPage === totalPages}
+                  onPress={() => setCurrentPage((p) => p + 1)}
+                >
+                  <Text
+                    style={{
+                      margin: 8,
+                      color: currentPage === totalPages ? "#ccc" : "#007bff",
+                    }}
+                  >
+                    Next
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
 
+          {/* Column Selector Modal */}
+          <Modal
+            visible={columnModalVisible}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setColumnModalVisible(false)}
+          >
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "rgba(0, 0, 0, 0.5)",
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: "#fff",
+                  padding: 20,
+                  borderRadius: 10,
+                  maxHeight: 300,
+                  width: "80%",
+                }}
+              >
+                <Text style={{ fontWeight: "bold", marginBottom: 10 }}>
+                  Select a column
+                </Text>
+                <ScrollView>
+                  {(
+                    (activeColumnIndex !== null &&
+                      schemas[selectedTablesList[activeColumnIndex]?.db]?.schema
+                        ?.tables?.[
+                        selectedTablesList[activeColumnIndex]?.table
+                      ]) ||
+                    []
+                  ).map((col, i) => (
+                    <TouchableOpacity
+                      key={i}
+                      onPress={() => {
+                        setSelectedColumns((prev) => ({
+                          ...prev,
+                          [activeColumnIndex]: col,
+                        }));
+                        setColumnModalVisible(false);
+                        setActiveColumnIndex(null);
+                      }}
+                    >
+                      <Text
+                        style={{
+                          paddingVertical: 8,
+                          borderBottomWidth: 1,
+                          borderBottomColor: "#ccc",
+                        }}
+                      >
+                        • {col}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+                <TouchableOpacity
+                  onPress={() => setColumnModalVisible(false)}
+                  style={{ marginTop: 10 }}
+                >
+                  <Text style={{ color: "red", textAlign: "center" }}>
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
+          {/* RESULT SET */}
+          {joinedData && joinedData.length > 0 && (
+            <View style={{ marginTop: 16 }}>...</View>
+          )}
+        </View>
+      )}
+    </View>
+  );
+};
+
+export default function JoinChain() {
+  const [blocks, setBlocks] = useState([{ id: 1 }]);
+  const [activeId, setActiveId] = useState(null);
+
+  return (
+    <ScrollView contentContainerStyle={{ padding: 16 }}>
+      {blocks.map((b) => (
+        <JoinBlock
+          key={b.id}
+          blockId={b.id}
+          isActive={activeId === b.id}
+          setActiveBlock={setActiveId}
+        />
+      ))}
+      <TouchableOpacity
+        style={[
+          styles.joinButton,
+          { backgroundColor: "#4CAF50", marginTop: 20 },
+        ]}
+        onPress={() => setBlocks((p) => [...p, { id: p.length + 1 }])}
+      >
+        <Text style={{ color: "#fff" }}>Make New Join</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  );
 }
