@@ -57,4 +57,4 @@ jobs:
         with:
           context: ./frontend/myNewApp
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME_FRONTEND }}:latest
+          tags: ghcr.io/${{ env.REGISTRY_USER }}/${{ env.IMAGE_NAME_FRONTEND }}:latest
