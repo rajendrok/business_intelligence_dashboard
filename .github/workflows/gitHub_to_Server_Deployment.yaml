@@ -4,14 +4,14 @@ on:
     branches: 
       - dev
       - test
-      - stg
       - prod
+      - main  
 
 
 env:
   IMAGE_REGISTRY: ghcr.io
-  IMAGE_NAME_BACKEND: my-backend-app
-  IMAGE_NAME_FRONTEND: my-frontend-app
+  IMAGE_NAME_BACKEND: backend-app
+  IMAGE_NAME_FRONTEND: frontend-app
   REGISTRY_USER: kushmanda-tech
 
 
