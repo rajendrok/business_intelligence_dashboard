@@ -4,8 +4,8 @@ on:
     branches: 
       - dev
       - test
-      - stg
       - prod
+      - main  
 
 
 env:
