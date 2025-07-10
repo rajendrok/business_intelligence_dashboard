@@ -1,26 +1,24 @@
-import { Feather as Icon } from "@expo/vector-icons";
 import React, { useRef, useState } from "react";
 import {
   Animated,
   Button,
-  Dimensions,
-  Image,
   Modal,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-
+import { Feather as Icon } from "@expo/vector-icons";
 import DatabaseSelector from "../components/DataBaseSelector.jsx";
 import FileUploader from "../components/FileUploader.jsx";
 import { getColorForKey } from "./ColorUtils.jsx";
 import ConnectionBlock from "./ConnectionBlock.jsx";
 import GraphOutput from "./GraphOutput.jsx";
-import styles from "./HomePageStyles";
-import Sidebar from "./Sidebar";
 import TableOutput from "./TableOutput.jsx";
+import Sidebar from "./Sidebar";
+import styles from "./HomePageStyles";
 import { useConnectionContext } from "./ConnectionContext";
+import JoinChain from "./JoinChain.jsx";
 
 export default function HomePage() {
   const {
@@ -48,13 +46,6 @@ export default function HomePage() {
   const [dropdownStates, setDropdownStates] = useState({});
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activePage, setActivePage] = useState("DataSources");
-
-  const [showDBList, setShowDBList] = useState(false);
-  const [pendingDB, setPendingDB] = useState(null);
-
-  const [selectedTablesList, setSelectedTablesList] = useState([]); // [{db, table}]
-  const [selectedJoins, setSelectedJoins] = useState([]);
-
   const slideAnim = useRef(new Animated.Value(-220)).current;
 
   const toggleSidebar = () => {
@@ -80,7 +71,6 @@ export default function HomePage() {
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Sidebar Overlay */}
       {isSidebarOpen && (
         <TouchableOpacity
           style={{
@@ -97,7 +87,6 @@ export default function HomePage() {
         />
       )}
 
-      {/* Sidebar Drawer */}
       <Animated.View
         style={{
           position: "absolute",
@@ -119,7 +108,6 @@ export default function HomePage() {
         />
       </Animated.View>
 
-      {/* Hamburger */}
       {!isSidebarOpen && (
         <TouchableOpacity
           onPress={toggleSidebar}
@@ -175,126 +163,27 @@ export default function HomePage() {
                       setDropdownStates((prev) => ({
                         ...prev,
                         [conn.key]: !prev[conn.key],
-                      }))
-                    }
+                      }))}
                   />
                 </View>
               ))}
             </View>
 
-            {/* Join Chain Section */}
-            <View style={styles.dbSelectorRow}>
-              <ScrollView horizontal contentContainerStyle={styles.dbSelectorScroll}>
-                <TouchableOpacity
-                  onPress={() => {
-                    setShowDBList(!showDBList);
-                    setPendingDB(null);
-                  }}
-                  style={styles.plusButton}
-                >
-                  <Icon name="plus" size={20} color="#fff" />
-                </TouchableOpacity>
+            {/* JoinChain handles the + icon UI */}
+            <JoinChain />
 
-                {selectedTablesList.map((entry, idx) => (
-                  <React.Fragment key={`${entry.db}_${entry.table}_${idx}`}>
-                    <View style={styles.dbItem}>
-                      <Text style={styles.dbText}>{entry.table}</Text>
-                    </View>
-                    {idx < selectedTablesList.length - 1 && (
-                      <TouchableOpacity
-                        onPress={() => {
-                          const joins = ["INNER", "LEFT", "RIGHT", "FULL OUTER"];
-                          setSelectedJoins((prev) => {
-                            const next = [...prev];
-                            const currentIdx = joins.indexOf(prev[idx] || "INNER");
-                            next[idx] = joins[(currentIdx + 1) % joins.length];
-                            return next;
-                          });
-                        }}
-                        style={styles.joinButton}
-                      >
-                        <Text>{selectedJoins[idx]}</Text>
-                      </TouchableOpacity>
-                    )}
-                  </React.Fragment>
-                ))}
-              </ScrollView>
-
-              {/* Dropdown for DB List */}
-              {showDBList && (
-                <View style={styles.dropdownContainer}>
-                  <ScrollView>
-                    {connections
-                      .filter((conn) => schemas[conn.key])
-                      .map((conn, idx) => (
-                        <TouchableOpacity
-                          key={idx}
-                          onPress={() => {
-                            setPendingDB(conn.key);
-                            setShowDBList(false);
-                          }}
-                          style={styles.dropdownItem}
-                        >
-                          <Text style={styles.dropdownText}>{conn.key}</Text>
-                        </TouchableOpacity>
-                      ))}
-                  </ScrollView>
-                </View>
-              )}
-
-              {/* Dropdown for Table List */}
-              {pendingDB && schemas[pendingDB] && (
-                <View style={styles.dropdownContainer}>
-                  <ScrollView>
-                    {Object.keys(schemas[pendingDB]?.schema?.tables || {}).map((table, index) => {
-                      const alreadyExists = selectedTablesList.some(
-                        (entry) => entry.db === pendingDB && entry.table === table
-                      );
-                      return (
-                        <TouchableOpacity
-                          key={index}
-                          onPress={() => {
-                            if (alreadyExists) {
-                              setPendingDB(null);
-                              return;
-                            }
-
-                            setSelectedTablesList((prev) => [...prev, { db: pendingDB, table }]);
-                            if (selectedTablesList.length > 0) {
-                              setSelectedJoins((prev) => [...prev, "INNER"]);
-                            }
-                            setPendingDB(null);
-                          }}
-                          style={styles.dropdownItem}
-                        >
-                          <Text style={styles.dropdownText}>
-                            {table} {alreadyExists ? "(already selected)" : ""}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </ScrollView>
-                </View>
-              )}
-            </View>
-
-            {/* Load Data */}
-            {selectedTablesList.length < 2 && (
-              <Text style={{ textAlign: "center", color: "red", marginTop: 10 }}>
-                Please select at least 2 tables to join.
-              </Text>
-            )}
             <View style={styles.loadButton}>
               <Button
                 title="Load Selected Table Data"
                 onPress={() => setShowPopup(true)}
-                disabled={selectedTablesList.length < 2}
               />
             </View>
 
-            {/* Output */}
             {connections.map(({ key }) => (
-              <View key={key} style={[styles.resultBox, { backgroundColor: getColorForKey(key) }]}>
+              <View
+                key={key}
+                style={[styles.resultBox, { backgroundColor: getColorForKey(key) }]}
+              >
                 <TableOutput
                   dbKey={key}
                   tableData={tableData[key]}
@@ -309,7 +198,6 @@ export default function HomePage() {
         {activePage === "FileUploads" && <FileUploader />}
       </ScrollView>
 
-      {/* Join Modal */}
       <Modal visible={showPopup} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
@@ -324,7 +212,6 @@ export default function HomePage() {
                     selectedOperation === op.value && styles.opCardSelected,
                   ]}
                 >
-                  <Image source={{ uri: op.img }} style={styles.opImage} />
                   <Text style={styles.opLabel}>{op.label}</Text>
                 </TouchableOpacity>
               ))}
