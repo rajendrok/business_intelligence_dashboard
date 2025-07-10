@@ -7,7 +7,6 @@ on:
       - prod
       - main  
 
-
 env:
   IMAGE_REGISTRY: ghcr.io
   IMAGE_NAME_BACKEND: backend-app
@@ -49,7 +48,7 @@ jobs:
         with:
           context: ./backend
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME_BACKEND }}:latest
+          tags: ghcr.io/${{ env.REGISTRY_USER }}/${{ env.IMAGE_NAME_BACKEND }}:latest
 
       # Build & Push Frontend Docker image
       - name: Build and Push Frontend Image
@@ -57,4 +56,4 @@ jobs:
         with:
           context: ./frontend/myNewApp
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME_FRONTEND }}:latest
+          tags: ghcr.io/${{ env.REGISTRY_USER }}/${{ env.IMAGE_NAME_FRONTEND }}:latest
