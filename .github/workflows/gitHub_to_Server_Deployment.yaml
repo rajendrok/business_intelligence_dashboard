@@ -7,7 +7,6 @@ on:
       - prod
       - main  
 
-
 env:
   IMAGE_REGISTRY: ghcr.io
   IMAGE_NAME_BACKEND: backend-app
