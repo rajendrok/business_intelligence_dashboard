@@ -155,14 +155,14 @@ export default function HomePage() {
                 >
                   <View
                     style={{
-                     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    backgroundColor: "#fff",
-    padding: 8,
-    width: "95%", // 👈 make it wider inside
-    alignSelf: "center", // 👈 center it inside the outer block
-    backgroundColor : "lightblue"
+                      borderWidth: 1,
+                      borderColor: "#ccc",
+                      borderRadius: 8,
+                      backgroundColor: "#fff",
+                      padding: 8,
+                      width: "95%", // 👈 make it wider inside
+                      alignSelf: "center", // 👈 center it inside the outer block
+                      backgroundColor: "lightblue",
                     }}
                   >
                     <ConnectionBlock

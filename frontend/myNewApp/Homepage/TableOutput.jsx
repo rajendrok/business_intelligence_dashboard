@@ -16,26 +16,38 @@ export default function TableOutput({ dbKey, tableData, customQueryResults }) {
     return (
       <View style={styles.tableContainer}>
         <ScrollView horizontal>
-          <View>
+          <View style={{ minWidth: 1000 }}>
             {/* Header */}
-            <View style={styles.row}>
-              {headers.map((col) => (
-                <Text key={col} style={[styles.cell, styles.headerCell]}>
-                  {col}
-                </Text>
+            <View style={styles.headerRow}>
+              {headers.map((col, i) => (
+                <View key={i} style={styles.headerCell}>
+                  <Text style={styles.headerText} numberOfLines={1} ellipsizeMode="tail">
+                    {col}
+                  </Text>
+                </View>
               ))}
             </View>
 
             {/* Rows */}
-            {rows.map((row, rowIndex) => (
-              <View key={rowIndex} style={styles.row}>
-                {headers.map((col) => (
-                  <Text key={col} style={styles.cell}>
-                    {String(row[col])}
-                  </Text>
-                ))}
-              </View>
-            ))}
+            <ScrollView style={{ maxHeight: 300 }}>
+              {rows.map((row, rowIndex) => (
+                <View
+                  key={rowIndex}
+                  style={[
+                    styles.dataRow,
+                    { backgroundColor: rowIndex % 2 === 0 ? '#fff' : '#f9f9f9' },
+                  ]}
+                >
+                  {headers.map((col, j) => (
+                    <View key={j} style={styles.dataCell}>
+                      <Text numberOfLines={1} ellipsizeMode="tail">
+                        {row[col] != null ? String(row[col]) : ''}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ))}
+            </ScrollView>
           </View>
         </ScrollView>
       </View>
@@ -83,7 +95,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontWeight: 'bold',
-    marginBottom: 5,
+    marginBottom: 6,
     fontSize: 16,
   },
   noDataText: {
@@ -97,24 +109,34 @@ const styles = StyleSheet.create({
   tableContainer: {
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 6,
+    borderRadius: 8,
     backgroundColor: '#fff',
-    maxHeight: 300,
+    overflow: 'hidden',
   },
-  row: {
+  headerRow: {
     flexDirection: 'row',
+    backgroundColor: '#eee',
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
-  },
-  cell: {
-    padding: 6,
-    minWidth: 100,
-    borderRightWidth: 1,
-    borderRightColor: '#ccc',
-    textAlign: 'left',
+    paddingVertical: 6,
   },
   headerCell: {
+    width: 160,
+    paddingHorizontal: 8,
+    marginRight: 4,
+  },
+  headerText: {
     fontWeight: 'bold',
-    backgroundColor: '#f2f2f2',
+  },
+  dataRow: {
+    flexDirection: 'row',
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+  },
+  dataCell: {
+    width: 160,
+    paddingHorizontal: 8,
+    marginRight: 4,
   },
 });
