@@ -122,13 +122,13 @@ func HandleFileUpload(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "file uploaded and ingested"})
 }
-
 func JoinHandler(c *gin.Context) {
 	var req models.JoinRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
 	dataMap := make(map[string][]map[string]interface{})
 	dbCache := make(map[string]*sql.DB)
 
@@ -165,16 +165,18 @@ func JoinHandler(c *gin.Context) {
 			dataMap[src.SourceID] = data
 		}
 	}
+
 	if _, ok := dataMap[req.Joins[0].LeftSource]; !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "missing initial join source: " + req.Joins[0].LeftSource})
 		return
 	}
+
 	result := []map[string]interface{}{}
 
 	for i, join := range req.Joins {
 		leftData, leftOk := dataMap[join.LeftSource]
 		if i > 0 && join.LeftSource == req.Joins[i-1].LeftSource {
-			leftData = result // use previous join result if same left
+			leftData = result
 		} else if !leftOk {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "missing left join source: " + join.LeftSource})
 			return
@@ -186,7 +188,7 @@ func JoinHandler(c *gin.Context) {
 			return
 		}
 
-		joined, err := db.DispatchJoin(join.Type, leftData, rightData, join.LeftColumn, join.RightColumn)
+		joined, err := db.DispatchJoin(join.Type, leftData, rightData, join.LeftColumn, join.RightColumn, join.LeftSource, join.RightSource)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
