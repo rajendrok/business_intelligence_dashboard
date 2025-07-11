@@ -374,7 +374,8 @@ const JoinBlock = ({ blockId, isActive, setActiveBlock }) => {
                       padding: 20,
                       borderRadius: 10,
                       maxHeight: 300,
-                      width: "80%",
+                      width: "40%",
+                      maxHeight: "70%",
                     }}
                   >
                     <Text style={{ fontWeight: "bold", marginBottom: 10 }}>
@@ -560,8 +561,8 @@ const JoinBlock = ({ blockId, isActive, setActiveBlock }) => {
                   backgroundColor: "#fff",
                   padding: 20,
                   borderRadius: 10,
-                  maxHeight: 300,
-                  width: "80%",
+                  maxHeight: "80%",
+                  width: "30%",
                 }}
               >
                 <Text style={{ fontWeight: "bold", marginBottom: 10 }}>
