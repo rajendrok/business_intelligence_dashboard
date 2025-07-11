@@ -13,6 +13,7 @@ export default StyleSheet.create({
     marginBottom: 10,
   },
   gridContainer: {
+    
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     marginBottom: 20,
@@ -20,7 +21,7 @@ export default StyleSheet.create({
   },
   connectionCard: {
     marginBottom: 10,
-    width:"30%"
+    width:"60%"
   },
   dbSelectorRow: {
     maxHeight: 200,
@@ -29,6 +30,7 @@ export default StyleSheet.create({
 
   },
   dbSelectorScroll: {
+
     flexDirection: 'row',
     alignItems: 'center',
   },
