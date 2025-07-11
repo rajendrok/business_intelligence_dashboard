@@ -134,17 +134,18 @@ const joins = selectedTablesList.slice(1).map((_, i) => ({
               <Icon name="plus" size={20} color="#fff" />
             </TouchableOpacity>
 
-           {selectedTablesList.map((entry, idx) => {
+{selectedTablesList.map((entry, idx) => {
   const cols = schemas[entry.db]?.schema?.tables?.[entry.table] || [];
   const selCol = selectedColumns[idx];
 
   return (
     <React.Fragment key={`${entry.db}-${idx}`}>
       {/* Table Display */}
-      <View style={[styles.dbItem, { marginRight: 6 }]}>
+      <View style={[styles.dbItem, { marginRight: 6, flexDirection: "row", alignItems: "center" }]}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Text style={styles.dbText}>
-            {entry.table}{selCol ? ` (${selCol})` : ""}
+            {entry.table}
+            {selCol ? ` (${selCol})` : ""}
           </Text>
           <TouchableOpacity
             onPress={() => {
@@ -156,34 +157,66 @@ const joins = selectedTablesList.slice(1).map((_, i) => ({
             <Icon name="edit-2" size={16} />
           </TouchableOpacity>
         </View>
+
+        {/* ❌ Cancel button */}
+        <TouchableOpacity
+          onPress={() => {
+            setSelectedTablesList((prev) =>
+              prev.filter((_, i) => i !== idx)
+            );
+            setSelectedJoins((prev) => {
+              const copy = { ...prev };
+              delete copy[idx];
+              return copy;
+            });
+            setSelectedColumns((prev) => {
+              const copy = { ...prev };
+              delete copy[idx];
+              return copy;
+            });
+          }}
+          style={{ marginLeft: 8 }}
+        >
+          <Icon name="x-circle" size={18} color="red" />
+        </TouchableOpacity>
       </View>
 
       {/* JOIN TYPE SELECTOR (only between tables) */}
       {idx < selectedTablesList.length - 1 && (
-        <View style={{
-          justifyContent: "center",
-          marginHorizontal: 4,
-          paddingHorizontal: 6,
-          paddingVertical: 2,
-          borderRadius: 4,
-          backgroundColor: "#ddd"
-        }}>
+        <View
+          style={{
+            justifyContent: "center",
+            marginHorizontal: 4,
+            paddingHorizontal: 6,
+            paddingVertical: 2,
+            borderRadius: 4,
+            backgroundColor: "#ddd",
+          }}
+        >
           <TouchableOpacity
             onPress={() => {
-              const next = { INNER: "LEFT", LEFT: "RIGHT", RIGHT: "FULL", FULL: "INNER" };
+              const next = {
+                INNER: "LEFT",
+                LEFT: "RIGHT",
+                RIGHT: "FULL",
+                FULL: "INNER",
+              };
               setSelectedJoins((prev) => ({
                 ...prev,
-                [idx]: next[prev[idx] || "INNER"]
+                [idx]: next[prev[idx] || "INNER"],
               }));
             }}
           >
-            <Text style={{ fontWeight: "bold" }}>{selectedJoins[idx] || "INNER"}</Text>
+            <Text style={{ fontWeight: "bold" }}>
+              {selectedJoins[idx] || "INNER"}
+            </Text>
           </TouchableOpacity>
         </View>
       )}
     </React.Fragment>
   );
 })}
+
 
 
             {selectedTablesList.length >= 2 && (
@@ -251,88 +284,122 @@ const joins = selectedTablesList.slice(1).map((_, i) => ({
             )}
 
           {/* RESULT SET */}
-          {joinedData && joinedData.length > 0 && (
-            <View style={{ marginTop: 16 }}>
-              <Text style={{ fontWeight: "bold" }}>
-                Total Rows: {joinedData.length}
-              </Text>
-              <ScrollView horizontal>
-                <ScrollView style={{ maxHeight: 300 }}>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      backgroundColor: "#eee",
-                      padding: 8,
-                    }}
-                  >
-                    {Object.keys(paginatedData[0]).map((col) => (
-                      <Text
-                        key={col}
-                        style={{ fontWeight: "bold", minWidth: 120 }}
-                      >
-                        {col}
-                      </Text>
-                    ))}
-                  </View>
-  {paginatedData.map((row, idx) => (
-  <View
-    key={idx}
-    style={{
-      flexDirection: "row",
-      padding: 8,
-      backgroundColor: idx % 2 ? "#fafafa" : "#fff",
-    }}
-  >
-    {Object.values(row).map((val, j) => (
-    <Text key={j} style={{ minWidth: 120 }}>
-  {val != null ? String(val) : ""}
-</Text>
+{joinedData && joinedData.length > 0 && (
+  <View style={{ marginTop: 16 }}>
+    <Text style={{ fontWeight: "bold", marginBottom: 6 }}>
+      Total Rows: {joinedData.length}
+    </Text>
 
-    ))}
-  </View>
-))}
-
-                </ScrollView>
-              </ScrollView>
+    <ScrollView horizontal>
+      <View style={{ minWidth: 1000 }}>
+        <ScrollView style={{ maxHeight: 300 }}>
+          {/* Header Row */}
+          <View
+            style={{
+              flexDirection: "row",
+              backgroundColor: "#eee",
+              paddingVertical: 8,
+              borderBottomWidth: 1,
+              borderColor: "#ccc",
+            }}
+          >
+            {Object.keys(paginatedData[0]).map((col, i) => (
               <View
+                key={i}
                 style={{
-                  flexDirection: "row",
-                  justifyContent: "center",
-                  marginTop: 8,
+                  width: 160, // 👈 fixed width per column
+                  paddingHorizontal: 8,
+                  marginRight: 4,
                 }}
               >
-                <TouchableOpacity
-                  disabled={currentPage === 1}
-                  onPress={() => setCurrentPage((p) => p - 1)}
+                <Text
+                  style={{ fontWeight: "bold" }}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
                 >
-                  <Text
-                    style={{
-                      margin: 8,
-                      color: currentPage === 1 ? "#ccc" : "#007bff",
-                    }}
-                  >
-                    Prev
-                  </Text>
-                </TouchableOpacity>
-                <Text style={{ margin: 8 }}>
-                  {currentPage}/{totalPages}
+                  {col}
                 </Text>
-                <TouchableOpacity
-                  disabled={currentPage === totalPages}
-                  onPress={() => setCurrentPage((p) => p + 1)}
-                >
-                  <Text
-                    style={{
-                      margin: 8,
-                      color: currentPage === totalPages ? "#ccc" : "#007bff",
-                    }}
-                  >
-                    Next
-                  </Text>
-                </TouchableOpacity>
               </View>
+            ))}
+          </View>
+
+          {/* Data Rows */}
+          {paginatedData.map((row, idx) => (
+            <View
+              key={idx}
+              style={{
+                flexDirection: "row",
+                paddingVertical: 6,
+                borderBottomWidth: 1,
+                borderColor: "#eee",
+                backgroundColor: idx % 2 === 0 ? "#fff" : "#f9f9f9",
+              }}
+            >
+              {Object.values(row).map((val, j) => (
+                <View
+                  key={j}
+                  style={{
+                    width: 160, // 👈 same fixed width
+                    paddingHorizontal: 8,
+                    marginRight: 4,
+                  }}
+                >
+                  <Text numberOfLines={1} ellipsizeMode="tail">
+                    {val != null ? String(val) : ""}
+                  </Text>
+                </View>
+              ))}
             </View>
-          )}
+          ))}
+        </ScrollView>
+      </View>
+    </ScrollView>
+
+    {/* Pagination */}
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: "center",
+        marginTop: 8,
+      }}
+    >
+      <TouchableOpacity
+        disabled={currentPage === 1}
+        onPress={() => setCurrentPage((p) => p - 1)}
+      >
+        <Text
+          style={{
+            margin: 8,
+            color: currentPage === 1 ? "#ccc" : "#007bff",
+          }}
+        >
+          Prev
+        </Text>
+      </TouchableOpacity>
+      <Text style={{ margin: 8 }}>
+        {currentPage}/{totalPages}
+      </Text>
+      <TouchableOpacity
+        disabled={currentPage === totalPages}
+        onPress={() => setCurrentPage((p) => p + 1)}
+      >
+        <Text
+          style={{
+            margin: 8,
+            color: currentPage === totalPages ? "#ccc" : "#007bff",
+          }}
+        >
+          Next
+        </Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+)}
+
+
+
+
+
 
           {/* Column Selector Modal */}
           <Modal
@@ -363,7 +430,7 @@ const joins = selectedTablesList.slice(1).map((_, i) => ({
                 </Text>
                 <ScrollView>
                   {(
-                    (activeColumnIndex !== null &&
+                    (activeColumnIndex !== null &&  
                       schemas[selectedTablesList[activeColumnIndex]?.db]?.schema
                         ?.tables?.[
                         selectedTablesList[activeColumnIndex]?.table
@@ -405,10 +472,8 @@ const joins = selectedTablesList.slice(1).map((_, i) => ({
             </View>
           </Modal>
 
-          {/* RESULT SET */}
-          {joinedData && joinedData.length > 0 && (
-            <View style={{ marginTop: 16 }}>...</View>
-          )}
+          
+
         </View>
       )}
     </View>
