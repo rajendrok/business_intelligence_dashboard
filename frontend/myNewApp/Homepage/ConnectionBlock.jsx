@@ -90,7 +90,7 @@ export default function ConnectionBlock({
 
 const styles = StyleSheet.create({
   outerWrapper: {
-    width: '48%',
+    width: '95%',
     marginBottom: 20,
   },
   container: {

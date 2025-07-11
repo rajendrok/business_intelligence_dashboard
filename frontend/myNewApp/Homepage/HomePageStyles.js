@@ -1,96 +1,96 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet } from "react-native";
 
 export default StyleSheet.create({
   page: {
     flex: 1,
     padding: 10,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   title: {
     fontSize: 22,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
     marginBottom: 10,
   },
   gridContainer: {
-    
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flexWrap: "wrap",
+    justifyContent: "space-between",
     marginBottom: 20,
-  
   },
   connectionCard: {
     marginBottom: 10,
-    width:"60%"
+    width: "60%",
   },
   dbSelectorRow: {
     maxHeight: 200,
     marginTop: 13,
     zIndex: 5,
-
   },
   dbSelectorScroll: {
-
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   plusButton: {
-    backgroundColor: '#007bff',
+    backgroundColor: "#007bff",
     padding: 10,
     borderRadius: 25,
     width: 40,
     height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 10,
   },
   dbItem: {
-    backgroundColor: '#e6f0ff',
+    backgroundColor: "#e6f0ff",
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#007bff',
+    borderColor: "#007bff",
     marginRight: 6,
   },
   dbText: {
-    fontWeight: 'bold',
-    color: '#007bff',
+    fontWeight: "bold",
+    color: "#007bff",
   },
   joinButton: {
-    backgroundColor: '#fff8e1',
+    backgroundColor: "#fff8e1",
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#aaa',
+    borderColor: "#aaa",
     marginRight: 6,
   },
+
   dropdownContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: -20,
     left: 50,
-    maxHeight: 100,
+    maxHeight: 200,
     width: 220,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 10,
     padding: 10,
-    zIndex: 20,
-    elevation: 5,
-    shadowColor: '#000',
+
+    // Ensures top stacking
+    zIndex: 9999, // ✅ higher than anything else
+    elevation: 20, // ✅ for Android stacking
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },
+
   dropdownItem: {
-    backgroundColor: '#e6f0ff',
+    backgroundColor: "#e6f0ff",
     padding: 10,
     borderRadius: 6,
     marginBottom: 8,
   },
   dropdownText: {
-    fontWeight: 'bold',
-    color: '#00509e',
+    fontWeight: "bold",
+    color: "#00509e",
   },
   loadButton: {
     marginTop: 130,
@@ -103,53 +103,53 @@ export default StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalBox: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     padding: 20,
     borderRadius: 8,
-    width: '90%',
+    width: "90%",
     maxWidth: 800,
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 15,
-    textAlign: 'center',
+    textAlign: "center",
   },
   operationGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-around",
   },
   opCard: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: 10,
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: "transparent",
     borderRadius: 10,
     marginBottom: 10,
   },
   opCardSelected: {
-    borderColor: '#007BFF',
+    borderColor: "#007BFF",
   },
   opImage: {
     width: 80,
     height: 80,
     marginBottom: 5,
-    resizeMode: 'contain',
+    resizeMode: "contain",
   },
   opLabel: {
     fontSize: 12,
-    textAlign: 'center',
+    textAlign: "center",
   },
   modalButtons: {
     marginTop: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    flexWrap: "wrap",
   },
 });

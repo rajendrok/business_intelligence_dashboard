@@ -7,6 +7,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { Feather as Icon } from "@expo/vector-icons";
 import DatabaseSelector from "../components/DataBaseSelector.jsx";
@@ -47,6 +48,7 @@ export default function HomePage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activePage, setActivePage] = useState("DataSources");
   const slideAnim = useRef(new Animated.Value(-220)).current;
+  const { width } = useWindowDimensions();
 
   const toggleSidebar = () => {
     Animated.timing(slideAnim, {
@@ -68,6 +70,9 @@ export default function HomePage() {
     { label: "LEFT OUTER", value: "LEFT OUTER" },
     { label: "RIGHT OUTER", value: "RIGHT OUTER" },
   ];
+
+  const isMobile = width < 600;
+  const cardWidth = isMobile ? "100%" : "33.33%";
 
   return (
     <View style={{ flex: 1 }}>
@@ -133,44 +138,79 @@ export default function HomePage() {
           <>
             <DatabaseSelector onAddDatabase={addConnection} />
 
-            <View style={styles.gridContainer}>
+            {/* ✅ Responsive Credential Grid */}
+            <View
+              style={{
+                flexDirection: "row",
+                flexWrap: "wrap",
+              }}
+            >
               {connections.map((conn) => (
-                <View key={conn.key} style={styles.connectionCard}>
-                  <ConnectionBlock
-                    driver={conn.driver}
-                    dbKey={conn.key}
-                    schema={schemas[conn.key]}
-                    credentials={credentials[conn.key] || {}}
-                    loading={loadingConnections[conn.key]}
-                    selectedTables={selectedTables[conn.key] || {}}
-                    onRemove={() => removeConnection(conn.key)}
-                    onUpdateCreds={(creds) => updateCredentials(conn.key, creds)}
-                    onSubmitCreds={() => submitCredentials(conn.key, conn.driver)}
-                    onCustomQuery={(result) =>
-                      setCustomQueryResults((prev) => ({ ...prev, [conn.key]: result }))
-                    }
-                    onToggleColumn={(table, col, isChecked) =>
-                      toggleColumnSelection(conn.key, table, col, isChecked)
-                    }
-                    onToggleTable={(table, isChecked) =>
-                      toggleTableSelection(conn.key, table, isChecked)
-                    }
-                    onSelectChart={(chart) =>
-                      setSelectedGraphs((prev) => ({ ...prev, [conn.key]: chart }))
-                    }
-                    showForm={dropdownStates[conn.key]}
-                    onToggleForm={() =>
-                      setDropdownStates((prev) => ({
-                        ...prev,
-                        [conn.key]: !prev[conn.key],
-                      }))}
-                  />
+                <View
+                  key={conn.key}
+                  style={{
+                    width: cardWidth,
+                    padding: 8,
+                  }}
+                >
+                  <View
+                    style={{
+                     borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    backgroundColor: "#fff",
+    padding: 8,
+    width: "95%", // 👈 make it wider inside
+    alignSelf: "center", // 👈 center it inside the outer block
+    backgroundColor : "lightblue"
+                    }}
+                  >
+                    <ConnectionBlock
+                      driver={conn.driver}
+                      dbKey={conn.key}
+                      schema={schemas[conn.key]}
+                      credentials={credentials[conn.key] || {}}
+                      loading={loadingConnections[conn.key]}
+                      selectedTables={selectedTables[conn.key] || {}}
+                      onRemove={() => removeConnection(conn.key)}
+                      onUpdateCreds={(creds) =>
+                        updateCredentials(conn.key, creds)
+                      }
+                      onSubmitCreds={() =>
+                        submitCredentials(conn.key, conn.driver)
+                      }
+                      onCustomQuery={(result) =>
+                        setCustomQueryResults((prev) => ({
+                          ...prev,
+                          [conn.key]: result,
+                        }))
+                      }
+                      onToggleColumn={(table, col, isChecked) =>
+                        toggleColumnSelection(conn.key, table, col, isChecked)
+                      }
+                      onToggleTable={(table, isChecked) =>
+                        toggleTableSelection(conn.key, table, isChecked)
+                      }
+                      onSelectChart={(chart) =>
+                        setSelectedGraphs((prev) => ({
+                          ...prev,
+                          [conn.key]: chart,
+                        }))
+                      }
+                      showForm={dropdownStates[conn.key]}
+                      onToggleForm={() =>
+                        setDropdownStates((prev) => ({
+                          ...prev,
+                          [conn.key]: !prev[conn.key],
+                        }))
+                      }
+                    />
+                  </View>
                 </View>
               ))}
             </View>
 
-            {/* JoinChain handles the + icon UI */}
-            
+            {/* JoinChain handles + icon and joins */}
             <JoinChain />
 
             <View style={styles.loadButton}>
@@ -183,7 +223,10 @@ export default function HomePage() {
             {connections.map(({ key }) => (
               <View
                 key={key}
-                style={[styles.resultBox, { backgroundColor: getColorForKey(key) }]}
+                style={[
+                  styles.resultBox,
+                  { backgroundColor: getColorForKey(key) },
+                ]}
               >
                 <TableOutput
                   dbKey={key}
