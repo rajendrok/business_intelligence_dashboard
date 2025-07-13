@@ -46,7 +46,7 @@ func HandleFetchTableData(c *gin.Context) {
 			result[table] = dbData
 
 			// Upload to Druid in background
-			go druid.IngestData(table, dbData)
+			go druid.IngestToDruid(table, dbData)
 		}
 	}
 
@@ -106,7 +106,7 @@ func HandleCustomQuery(c *gin.Context) {
 	}
 
 	// Async ingest into Druid
-	go druid.IngestData("custom_query", result)
+	go druid.IngestToDruid("custom_query", result)
 
 	c.JSON(http.StatusOK, gin.H{"data": result})
 }
@@ -118,7 +118,7 @@ func HandleFileUpload(c *gin.Context) {
 		return
 	}
 	if fileData != nil {
-		druid.IngestData("uploaded_file", fileData.([]map[string]interface{}))
+		druid.IngestToDruid("uploaded_file", fileData.([]map[string]interface{}))
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "file uploaded and ingested"})
 }

@@ -4,22 +4,20 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"main/config"
 	"net/http"
 	"time"
 )
 
-func IngestData(table string, data []map[string]interface{}) {
-	fmt.Println("Starting Ingest data")
-
-	// Ensure __time column exists
+func IngestToDruid(table string, data []map[string]interface{}) {
+	// Ensure __time is set
 	for _, row := range data {
 		if _, ok := row["__time"]; !ok {
 			row["__time"] = time.Now().UTC().Format(time.RFC3339)
 		}
 	}
 
+	// Create task payload
 	payload := map[string]interface{}{
 		"type": "index",
 		"spec": map[string]interface{}{
@@ -43,13 +41,12 @@ func IngestData(table string, data []map[string]interface{}) {
 				"type": "index",
 				"inputSource": map[string]interface{}{
 					"type": "inline",
-					"data": marshalRows(data), // This is your \n-separated NDJSON
+					"data": marshalRows(data),
 				},
 				"inputFormat": map[string]interface{}{
 					"type":                   "json",
 					"assumeNewlineDelimited": true,
-					// "useJsonNodeReader":      true,
-					"keepNullColumns": false,
+					"keepNullColumns":        false,
 				},
 			},
 			"tuningConfig": map[string]interface{}{
@@ -59,23 +56,25 @@ func IngestData(table string, data []map[string]interface{}) {
 	}
 
 	b, _ := json.Marshal(payload)
-	req, err := http.NewRequest("POST", config.DRUID_IngestEndpoint+"/task", bytes.NewBuffer(b))
+
+	req, err := http.NewRequest("POST", config.DRUID_IngestEndpoint, bytes.NewBuffer(b))
 	if err != nil {
-		fmt.Println("druid ingest request error:", err)
+		fmt.Println("Request creation error:", err)
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := &http.Client{Timeout: 15 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("druid ingest send error:", err)
+		fmt.Println("Request failed:", err)
 		return
 	}
 	defer resp.Body.Close()
 
-	bodyBytes, _ := io.ReadAll(resp.Body)
-	fmt.Println("Druid ingest response body:", string(bodyBytes))
+	var response map[string]interface{}
+	_ = json.NewDecoder(resp.Body).Decode(&response)
+	fmt.Println("Druid Response:", response)
 }
 
 func marshalRows(rows []map[string]interface{}) string {
